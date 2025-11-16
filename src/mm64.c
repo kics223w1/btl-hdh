@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <stdlib.h>
+#include <string.h>
 
 #if defined(MM64)
 
@@ -107,27 +107,17 @@ int get_pd_from_pagenum(addr_t pgn, addr_t* pgd, addr_t* p4d, addr_t* pud, addr_
  */
 int pte_set_swap(struct pcb_t *caller, addr_t pgn, int swptyp, addr_t swpoff)
 {
-//  struct krnl_t *krnl = caller->krnl;
-
+  struct krnl_t *krnl = caller->krnl;
   addr_t *pte;
-  addr_t pgd=0;
-  addr_t p4d=0;
-  addr_t pud=0;
-  addr_t pmd=0;
-  addr_t pt=0;
+  addr_t pgd_idx=0;
+  addr_t p4d_idx=0;
+  addr_t pud_idx=0;
+  addr_t pmd_idx=0;
+  addr_t pt_idx=0;
 	
-  // dummy pte alloc to avoid runtime error
-  pte = malloc(sizeof(addr_t));
-#ifdef MM64	
-  /* Get value from the system */
-  /* TODO Perform multi-level page mapping */
-  get_pd_from_pagenum(pgn, &pgd, &p4d, &pud, &pmd, &pt);
-  //... krnl->mm->pgd
-  //... krnl->mm->pt
-  //pte = &krnl->mm->pt;
-#else
-  pte = &krnl->mm->pgd[pgn];
-#endif
+  get_pd_from_pagenum(pgn, &pgd_idx, &p4d_idx, &pud_idx, &pmd_idx, &pt_idx);
+
+  pte = &krnl->mm->pt[pt_idx];
 	
   SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
   SETBIT(*pte, PAGING_PTE_SWAPPED_MASK);
@@ -145,27 +135,17 @@ int pte_set_swap(struct pcb_t *caller, addr_t pgn, int swptyp, addr_t swpoff)
  */
 int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn)
 {
-//  struct krnl_t *krnl = caller->krnl;
-
+  struct krnl_t *krnl = caller->krnl;
   addr_t *pte;
-  addr_t pgd=0;
-  addr_t p4d=0;
-  addr_t pud=0;
-  addr_t pmd=0;
-  addr_t pt=0;
+  addr_t pgd_idx=0;
+  addr_t p4d_idx=0;
+  addr_t pud_idx=0;
+  addr_t pmd_idx=0;
+  addr_t pt_idx=0;
 	
-  // dummy pte alloc to avoid runtime error
-  pte = malloc(sizeof(addr_t));
-#ifdef MM64	
-  /* Get value from the system */
-  /* TODO Perform multi-level page mapping */
-  get_pd_from_pagenum(pgn, &pgd, &p4d, &pud, &pmd, &pt);
-  //... krnl->mm->pgd
-  //... krnl->mm->pt
-  //pte = &krnl->mm->pt;
-#else
-  pte = &krnl->mm->pgd[pgn];
-#endif
+  get_pd_from_pagenum(pgn, &pgd_idx, &p4d_idx, &pud_idx, &pmd_idx, &pt_idx);
+
+  pte = &krnl->mm->pt[pt_idx];
 
   SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
   CLRBIT(*pte, PAGING_PTE_SWAPPED_MASK);
@@ -183,19 +163,17 @@ int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn)
  **/
 uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 {
-//  struct krnl_t *krnl = caller->krnl;
+  struct krnl_t *krnl = caller->krnl;
   uint32_t pte = 0;
-  addr_t pgd=0;
-  addr_t p4d=0;
-  addr_t pud=0;
-  addr_t pmd=0;
-  addr_t	pt=0;
+  addr_t pgd_idx=0;
+  addr_t p4d_idx=0;
+  addr_t pud_idx=0;
+  addr_t pmd_idx=0;
+  addr_t pt_idx=0;
 	
-  /* TODO Perform multi-level page mapping */
-  get_pd_from_pagenum(pgn, &pgd, &p4d, &pud, &pmd, &pt);
-  //... krnl->mm->pgd
-  //... krnl->mm->pt
-  //pte = &krnl->mm->pt;	
+  get_pd_from_pagenum(pgn, &pgd_idx, &p4d_idx, &pud_idx, &pmd_idx, &pt_idx);
+
+  pte = (uint32_t)krnl->mm->pt[pt_idx];
 	
   return pte;
 }
@@ -208,7 +186,15 @@ uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 int pte_set_entry(struct pcb_t *caller, addr_t pgn, uint32_t pte_val)
 {
 	struct krnl_t *krnl = caller->krnl;
-	krnl->mm->pgd[pgn]=pte_val;
+	addr_t pgd_idx=0;
+	addr_t p4d_idx=0;
+	addr_t pud_idx=0;
+	addr_t pmd_idx=0;
+	addr_t pt_idx=0;
+	
+	get_pd_from_pagenum(pgn, &pgd_idx, &p4d_idx, &pud_idx, &pmd_idx, &pt_idx);
+	
+	krnl->mm->pt[pt_idx] = (addr_t)pte_val;
 	
 	return 0;
 }
@@ -375,15 +361,14 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
 {
   struct vm_area_struct *vma0 = malloc(sizeof(struct vm_area_struct));
 
-  /* TODO init page table directory */
-   //mm->pgd = ...
-   //mm->p4d = ...
-   //mm->pud = ...
-   //mm->pmd = ...
-   //mm->pt = ...
+  mm->pgd = calloc(512, sizeof(uint64_t));
+  mm->p4d = calloc(512, sizeof(uint64_t));
+  mm->pud = calloc(512, sizeof(uint64_t));
+  mm->pmd = calloc(512, sizeof(uint64_t));
+  mm->pt = calloc(512, sizeof(uint64_t));
 
+  mm->fifo_pgn = NULL;
 
-  /* By default the owner comes with at least one vma */
   vma0->vm_id = 0;
   vma0->vm_start = 0;
   vma0->vm_end = vma0->vm_start;
@@ -391,16 +376,12 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   struct vm_rg_struct *first_rg = init_vm_rg(vma0->vm_start, vma0->vm_end);
   enlist_vm_rg_node(&vma0->vm_freerg_list, first_rg);
 
-  /* TODO update VMA0 next */
-  // vma0->next = ...
+  vma0->vm_next = NULL;
 
-  /* Point vma owner backward */
-  //vma0->vm_mm = mm; 
+  vma0->vm_mm = mm; 
 
-  /* TODO: update mmap */
-  //mm->mmap = ...
-  //mm->symrgtbl = ...
-
+  mm->mmap = vma0;
+  memset(mm->symrgtbl, 0, sizeof(mm->symrgtbl));
 
   return 0;
 }
