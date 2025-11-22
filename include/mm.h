@@ -94,9 +94,10 @@
 #define PAGING_FPN(x)  GETVAL(x,PAGING_PTE_FPN_MASK,PAGING_PTE_FPN_LOBIT)
 
 /* Memory range operator */
-/* TODO implement the INCLUDE and OVERLAP checking mechanism */
-#define INCLUDE(x1,x2,y1,y2) (0)
-#define OVERLAP(x1,x2,y1,y2) (0)
+/* Check if range [y1, y2] is completely included in range [x1, x2] */
+#define INCLUDE(x1,x2,y1,y2) ((x1) <= (y1) && (y2) <= (x2))
+/* Check if range [x1, x2] overlaps with range [y1, y2] */
+#define OVERLAP(x1,x2,y1,y2) (((x1) < (y2)) && ((y1) < (x2)))
 
 /* VM region prototypes */
 struct vm_rg_struct * init_vm_rg(addr_t rg_start, addr_t rg_end);
@@ -148,6 +149,13 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
 int inc_vma_limit(struct pcb_t *caller, int vmaid, addr_t inc_sz);
 int find_victim_page(struct mm_struct* mm, addr_t *pgn);
 struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid);
+
+/* Multiple VMA management functions */
+struct vm_area_struct *create_vm_area(int vmaid, addr_t vm_start, addr_t vm_end);
+int add_vm_area(struct mm_struct *mm, struct vm_area_struct *new_vma);
+int remove_vm_area(struct mm_struct *mm, int vmaid);
+int merge_vm_areas(struct vm_area_struct *vma1, struct vm_area_struct *vma2);
+int split_vm_area(struct vm_area_struct *vma, addr_t split_addr, struct vm_area_struct **new_vma);
 
 /* MEM/PHY protypes */
 int MEMPHY_get_freefp(struct memphy_struct *mp, addr_t *fpn);

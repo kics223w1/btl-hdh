@@ -1,0 +1,283 @@
+================================================================================
+      MULTIPLE MEMORY SEGMENTS ARCHITECTURE - IMPLEMENTATION DIAGRAM
+================================================================================
+
+1. PROCESS MEMORY HIERARCHY
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                          Process PCB                                │
+    │                                                                     │
+    │  ┌───────────────────────────────────────────────────────────┐     │
+    │  │              struct krnl_t (Kernel Structure)              │     │
+    │  │                                                            │     │
+    │  │  ┌──────────────────────────────────────────────────┐     │     │
+    │  │  │        struct mm_struct (Memory Manager)         │     │     │
+    │  │  │                                                  │     │     │
+    │  │  │  • pgd   → Page Global Directory (Level 5)      │     │     │
+    │  │  │  • p4d   → Page Level 4 Directory (Level 4)     │     │     │
+    │  │  │  • pud   → Page Upper Directory (Level 3)       │     │     │
+    │  │  │  • pmd   → Page Middle Directory (Level 2)      │     │     │
+    │  │  │  • pt    → Page Table (Level 1)                 │     │     │
+    │  │  │  • mmap  → VMA List (Multiple Memory Areas)     │     │     │
+    │  │  │  • symrgtbl[30] → Symbol Region Table           │     │     │
+    │  │  │  • fifo_pgn → FIFO Page Replacement List        │     │     │
+    │  │  │                                                  │     │     │
+    │  │  └──────────────────┬───────────────────────────────┘     │     │
+    │  │                     │                                     │     │
+    │  └─────────────────────┼─────────────────────────────────────┘     │
+    │                        │                                           │
+    └────────────────────────┼───────────────────────────────────────────┘
+                             │
+                             │ mmap points to linked list of VMAs
+                             ↓
+
+2. VIRTUAL MEMORY AREA (VMA) LINKED LIST
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────┐
+    │         VMA #0 (Heap/Data Segment)                      │
+    │  ┌───────────────────────────────────────────────────┐  │
+    │  │ vm_id:    0                                       │  │
+    │  │ vm_start: 0x00000000                             │  │
+    │  │ vm_end:   0x00001000                             │  │
+    │  │ sbrk:     0x00000500  ← Current usage limit      │  │
+    │  │ vm_mm:    → back to mm_struct                    │  │
+    │  │ vm_freerg_list: → Free Regions                   │  │
+    │  │ vm_next:  → VMA #1                               │  │
+    │  └───────────────────────────────────────────────────┘  │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ↓
+    ┌─────────────────────────────────────────────────────────┐
+    │         VMA #1 (Stack Segment)                          │
+    │  ┌───────────────────────────────────────────────────┐  │
+    │  │ vm_id:    1                                       │  │
+    │  │ vm_start: 0x00010000                             │  │
+    │  │ vm_end:   0x00020000                             │  │
+    │  │ sbrk:     0x00010000                             │  │
+    │  │ vm_mm:    → back to mm_struct                    │  │
+    │  │ vm_freerg_list: → Free Regions                   │  │
+    │  │ vm_next:  → VMA #2 (or NULL)                     │  │
+    │  └───────────────────────────────────────────────────┘  │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ↓
+    ┌─────────────────────────────────────────────────────────┐
+    │         VMA #2 (Code Segment)                           │
+    │  ┌───────────────────────────────────────────────────┐  │
+    │  │ vm_id:    2                                       │  │
+    │  │ vm_start: 0x00100000                             │  │
+    │  │ vm_end:   0x00110000                             │  │
+    │  │ sbrk:     0x00100000                             │  │
+    │  │ vm_mm:    → back to mm_struct                    │  │
+    │  │ vm_freerg_list: → Free Regions                   │  │
+    │  │ vm_next:  NULL                                   │  │
+    │  └───────────────────────────────────────────────────┘  │
+    └─────────────────────────────────────────────────────────┘
+
+3. FREE REGION LIST (Within Each VMA)
+================================================================================
+
+    Each VMA maintains a list of free regions:
+
+    VMA #0's vm_freerg_list:
+    ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+    │  vm_rg_struct    │────→│  vm_rg_struct    │────→│  vm_rg_struct    │
+    │  rg_start: 0x500 │     │  rg_start: 0x700 │     │  rg_start: 0x900 │
+    │  rg_end:   0x600 │     │  rg_end:   0x800 │     │  rg_end:   0xA00 │
+    │  rg_next: ───────┼─────→  rg_next: ───────┼─────→  rg_next: NULL   │
+    └──────────────────┘     └──────────────────┘     └──────────────────┘
+         Free: 256B               Free: 256B               Free: 256B
+
+4. 5-LEVEL PAGE TABLE HIERARCHY (64-bit Mode)
+================================================================================
+
+    Virtual Address (64-bit):
+    ┌────┬─────┬─────┬─────┬─────┬─────┬──────────┐
+    │ -- │ PGD │ P4D │ PUD │ PMD │ PT  │  OFFSET  │
+    └────┴─────┴─────┴─────┴─────┴─────┴──────────┘
+     63-57 56-48 47-39 38-30 29-21 20-12   11-0
+
+    Page Table Traversal:
+    
+    mm_struct
+       ↓
+    ┌─────────────────────┐
+    │  pgd[512 entries]   │ Level 5: Page Global Directory
+    │  [0]: NULL          │
+    │  [1]: NULL          │
+    │  [2]: → P4D────────┐│
+    │  ...                ││
+    └─────────────────────┘│
+                           │
+                           ↓
+          ┌─────────────────────┐
+          │  p4d[512 entries]   │ Level 4: P4D
+          │  [0]: NULL          │
+          │  [1]: → PUD────────┐│
+          │  ...                ││
+          └─────────────────────┘│
+                                 │
+                                 ↓
+                ┌─────────────────────┐
+                │  pud[512 entries]   │ Level 3: PUD
+                │  [0]: NULL          │
+                │  [1]: → PMD────────┐│
+                │  ...                ││
+                └─────────────────────┘│
+                                       │
+                                       ↓
+                      ┌─────────────────────┐
+                      │  pmd[512 entries]   │ Level 2: PMD
+                      │  [0]: NULL          │
+                      │  [1]: → PT─────────┐│
+                      │  ...                ││
+                      └─────────────────────┘│
+                                             │
+                                             ↓
+                            ┌─────────────────────────┐
+                            │  pt[512 entries]        │ Level 1: Page Table
+                            │  [0]: PTE (FPN=0x123)   │
+                            │  [1]: PTE (FPN=0x456)   │
+                            │  [2]: PTE (SWAPPED)     │
+                            │  ...                    │
+                            └─────────────────────────┘
+
+5. PAGE TABLE ENTRY (PTE) FORMAT
+================================================================================
+
+    ┌───┬───┬───┬───┬──────────┬─────────────────────────────────┐
+    │ P │ S │ R │ D │  USRNUM  │         FPN or SWPOFF           │
+    └───┴───┴───┴───┴──────────┴─────────────────────────────────┘
+     31  30  29  28   27    15   12                            0
+
+    P  = Present bit (1 = in RAM, 0 = not present)
+    S  = Swapped bit (1 = in swap, 0 = in RAM)
+    R  = Reserved
+    D  = Dirty bit
+    USRNUM = User number
+    FPN = Frame Physical Number (if present & not swapped)
+    SWPOFF = Swap offset (if swapped)
+
+6. MEMORY OPERATIONS FLOW
+================================================================================
+
+    A. Creating a New VMA:
+    ──────────────────────
+    create_vm_area(id, start, end)
+           ↓
+    Initialize VMA structure
+           ↓
+    Create initial free region list
+           ↓
+    add_vm_area(mm, vma)
+           ↓
+    Check for overlaps with existing VMAs
+           ↓
+    Insert into sorted VMA list
+           ↓
+    Update mm->mmap
+
+    B. Expanding a VMA (inc_vma_limit):
+    ───────────────────────────────────
+    Request size increase
+           ↓
+    Align size to page boundary
+           ↓
+    Calculate number of pages needed
+           ↓
+    Update vm_end and sbrk
+           ↓
+    Validate no overlap
+           ↓
+    alloc_pages_range() → Get frames from RAM
+           ↓
+    vmap_page_range() → Map frames to pages
+           ↓
+    Update page table entries
+
+    C. Memory Allocation Within VMA:
+    ────────────────────────────────
+    __alloc(caller, vmaid, rgid, size, addr)
+           ↓
+    Get VMA by ID
+           ↓
+    Find or create free region
+           ↓
+    Update sbrk if needed (inc_vma_limit)
+           ↓
+    Allocate physical frames
+           ↓
+    Map virtual pages to physical frames
+           ↓
+    Update symbol region table
+           ↓
+    Return allocated address
+
+7. MEMORY RANGE CHECKING
+================================================================================
+
+    INCLUDE Macro:
+    ──────────────
+    Checks if [y1, y2] is completely within [x1, x2]
+    
+    [x1]━━━━━━━━━━━━━━━━━━━━━━━━━━━[x2]
+              [y1]━━━━━[y2]
+              
+    INCLUDE(x1, x2, y1, y2) = TRUE
+
+
+    OVERLAP Macro:
+    ──────────────
+    Checks if two ranges overlap
+    
+    Case 1: Overlap
+    [x1]━━━━━━━━━━[x2]
+            [y1]━━━━━━━━━[y2]
+            
+    OVERLAP(x1, x2, y1, y2) = TRUE
+
+    Case 2: No Overlap
+    [x1]━━━[x2]     [y1]━━━[y2]
+    
+    OVERLAP(x1, x2, y1, y2) = FALSE
+
+8. KEY FUNCTIONS IMPLEMENTED
+================================================================================
+
+    VMA Management:
+    ───────────────
+    • create_vm_area()    - Create new VMA
+    • add_vm_area()       - Add VMA to process
+    • remove_vm_area()    - Remove VMA from process
+    • merge_vm_areas()    - Merge adjacent VMAs
+    • split_vm_area()     - Split VMA at address
+    • inc_vma_limit()     - Expand VMA boundaries
+
+    Page Table Operations:
+    ──────────────────────
+    • init_mm()           - Initialize memory manager
+    • pte_set_fpn()       - Set PTE to map frame
+    • pte_set_swap()      - Set PTE for swapped page
+    • pte_get_entry()     - Get PTE value
+    • vmap_page_range()   - Map range of pages
+    • alloc_pages_range() - Allocate physical frames
+    • print_pgtbl()       - Debug print page table
+
+9. ADVANTAGES SUMMARY
+================================================================================
+
+    ✓ Logical Separation    - Different memory types in separate areas
+    ✓ Independent Growth    - Each VMA grows independently
+    ✓ Efficient Memory      - Physical allocation only for used areas
+    ✓ Memory Protection     - Different permissions per segment
+    ✓ Flexibility           - Support for mmap, shared memory, ASLR
+    ✓ Scalability           - Unlimited VMAs via linked list
+    ✓ Reduced Fragmentation - On-demand allocation
+    ✓ Real-World Compatible - Similar to Linux VMA, Windows VAD
+
+================================================================================
+                              END OF DIAGRAM
+================================================================================
+
