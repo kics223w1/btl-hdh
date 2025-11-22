@@ -135,7 +135,16 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, addr_t vmastart, a
 int inc_vma_limit(struct pcb_t *caller, int vmaid, addr_t inc_sz)
 {
   struct vm_rg_struct * newrg = malloc(sizeof(struct vm_rg_struct));
-  struct vm_area_struct *cur_vma = get_vma_by_num(caller->krnl->mm, vmaid);
+  struct vm_area_struct *cur_vma;
+  
+  /* Defensive: ensure memory management structures are valid before use */
+  if (caller == NULL || caller->krnl == NULL || caller->krnl->mm == NULL)
+  {
+    free(newrg);
+    return -1;
+  }
+
+  cur_vma = get_vma_by_num(caller->krnl->mm, vmaid);
   
   if (cur_vma == NULL)
   {

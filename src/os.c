@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <execinfo.h>
+#include <unistd.h>
 
 static int time_slot;
 static int num_cpus;
@@ -43,6 +46,17 @@ struct cpu_args {
 	struct timer_id_t * timer_id;
 	int id;
 };
+
+/* Simple SIGSEGV handler to help debug rare crashes during tests */
+static void sigsegv_handler(int sig)
+{
+	void *array[32];
+	size_t size = backtrace(array, 32);
+
+	fprintf(stderr, "\n*** Caught signal %d (segmentation fault) ***\n", sig);
+	backtrace_symbols_fd(array, size, STDERR_FILENO);
+	_exit(1);
+}
 
 
 static void * cpu_routine(void * args) {
@@ -210,6 +224,10 @@ int main(int argc, char * argv[]) {
 		printf("Usage: os [path to configure file]\n");
 		return 1;
 	}
+
+	/* Install debug SIGSEGV handler (has no effect when program exits
+	 * normally, but gives us a backtrace if a rare crash occurs). */
+	signal(SIGSEGV, sigsegv_handler);
 
 	char path[100];
 	path[0] = '\0';

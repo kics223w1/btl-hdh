@@ -31,13 +31,9 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
    /* Create a minimal PCB wrapper that points back to the kernel.
     *
     * Many MM helpers expect a valid `struct pcb_t *caller` only so they can
-    * reach the kernel-wide MM structures via `caller->krnl`.  The original
-    * code allocated an uninitialised PCB which left `caller->krnl`
-    * containing garbage and caused segmentation faults as soon as any
-    * syscall tried to dereference it.
-    *
-    * For the current single-kernel-MM design it is sufficient to create a
-    * tiny, throw‑away PCB whose only meaningful field is `krnl`.
+    * reach the kernel-wide MM structures via `caller->krnl`.  We do NOT
+    * trust or use any PCB pointer from userspace; instead we create this
+    * internal kernel-side PCB shell that only exposes kernel state.
     */
    struct pcb_t *caller = malloc(sizeof(struct pcb_t));
    if (caller == NULL) {
@@ -52,15 +48,6 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
     *            syscall implementations are in kernel space.
     */
 
-   /* TODO: Traverse proclist to terminate the proc
-    *       stcmp to check the process match proc_name
-    */
-//	struct queue_t *running_list = krnl->running_list;
-
-    /* TODO Maching and marking the process */
-    /* user process are not allowed to access directly pcb in kernel space of syscall */
-    //....
-	
    switch (memop) {
    case SYSMEM_MAP_OP:
             /* Reserved process case*/

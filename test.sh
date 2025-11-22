@@ -34,17 +34,38 @@ TEST_FILES=(
     "os_1_mlq_paging"
     "os_0_mlq_paging"
     "os_1_singleCPU_mlq_paging"
+    "os_syscall"
+    "os_syscall_list"
 )
+
+# Choose a timeout command if available (Linux: timeout, macOS/Homebrew: gtimeout)
+TIMEOUT_CMD=""
+if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD="timeout 10"
+elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD="gtimeout 10"
+fi
 
 for test in "${TEST_FILES[@]}"; do
     TOTAL=$((TOTAL+1))
     echo "[Test] Running $test..."
-    
-    if timeout 10 ./os "$test" > /dev/null 2>&1; then
-        echo -e "${GREEN}✅ PASS${NC} - $test"
-        PASSED=$((PASSED+1))
+
+    if [ -n "$TIMEOUT_CMD" ]; then
+        # Run with timeout protection if available
+        if $TIMEOUT_CMD ./os "$test" > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ PASS${NC} - $test"
+            PASSED=$((PASSED+1))
+        else
+            echo -e "${RED}❌ FAIL${NC} - $test"
+        fi
     else
-        echo -e "${RED}❌ FAIL${NC} - $test (may timeout on macOS without gtimeout)"
+        # Fallback: run directly (no timeout available on this platform)
+        if ./os "$test" > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ PASS${NC} - $test"
+            PASSED=$((PASSED+1))
+        else
+            echo -e "${RED}❌ FAIL${NC} - $test"
+        fi
     fi
 done
 
