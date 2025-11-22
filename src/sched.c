@@ -58,14 +58,74 @@ void init_scheduler(void) {
  */
 struct pcb_t * get_mlq_proc(void) {
 	struct pcb_t * proc = NULL;
-
+	
+	/* State variables to track current priority and remaining slots */
+	static int curr_prio = 0;          /* Current priority level being served */
+	static int curr_slot = 0;          /* Remaining slots for current priority */
+	
 	pthread_mutex_lock(&queue_lock);
-	/*TODO: get a process from PRIORITY [ready_queue].
-	 *      It worth to protect by a mechanism.
-	 * */
-
+	
+	/* MLQ Policy Implementation:
+	 * - Each priority level i gets slot[i] = MAX_PRIO - i time slots
+	 * - Traverse through priority levels, giving each level its allocated slots
+	 * - After exhausting slots for a level, move to next level
+	 * - After scanning all levels, restart from priority 0
+	 */
+	
+	/* Initialize current slot if starting fresh */
+	if (curr_slot == 0)
+	{
+		/* Find next non-empty queue starting from curr_prio */
+		int found = 0;
+		for (int i = 0; i < MAX_PRIO; i++)
+		{
+			int check_prio = (curr_prio + i) % MAX_PRIO;
+			if (!empty(&mlq_ready_queue[check_prio]))
+			{
+				curr_prio = check_prio;
+				curr_slot = slot[curr_prio];  /* slot[i] = MAX_PRIO - i */
+				found = 1;
+				break;
+			}
+		}
+		
+		if (!found)
+		{
+			/* All queues are empty */
+			pthread_mutex_unlock(&queue_lock);
+			return NULL;
+		}
+	}
+	
+	/* Get process from current priority queue */
+	proc = dequeue(&mlq_ready_queue[curr_prio]);
+	
 	if (proc != NULL)
+	{
+		/* Successfully got a process */
+		curr_slot--;  /* Decrease remaining slots for this priority */
+		
+		/* Add to running list for tracking */
 		enqueue(&running_list, proc);
+	}
+	else
+	{
+		/* Current queue became empty, reset slots to move to next priority */
+		curr_slot = 0;
+		
+		/* Try again recursively to find next available process */
+		pthread_mutex_unlock(&queue_lock);
+		return get_mlq_proc();
+	}
+	
+	/* Check if we've exhausted slots for current priority */
+	if (curr_slot == 0)
+	{
+		/* Move to next priority level */
+		curr_prio = (curr_prio + 1) % MAX_PRIO;
+	}
+	
+	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
 
@@ -74,13 +134,19 @@ void put_mlq_proc(struct pcb_t * proc) {
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
-	/* TODO: put running proc to running_list 
-	 *       It worth to protect by a mechanism.
-	 * 
+	/* Put the process back to its priority ready queue
+	 * This is called when a process's time slice expires
+	 * The process is re-queued to the same priority level (no feedback)
 	 */
-
+	
 	pthread_mutex_lock(&queue_lock);
+	
+	/* Remove from running list if present */
+	purgequeue(&running_list, proc);
+	
+	/* Add back to appropriate priority queue */
 	enqueue(&mlq_ready_queue[proc->prio], proc);
+	
 	pthread_mutex_unlock(&queue_lock);
 }
 
@@ -89,13 +155,16 @@ void add_mlq_proc(struct pcb_t * proc) {
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
-	/* TODO: put running proc to running_list
-	 *       It worth to protect by a mechanism.
-	 * 
+	/* Add a newly loaded process to its appropriate priority queue
+	 * This is called by the loader when a new process is created
+	 * The process is placed in the queue matching its priority level
 	 */
        
 	pthread_mutex_lock(&queue_lock);
+	
+	/* Add process to the queue matching its priority */
 	enqueue(&mlq_ready_queue[proc->prio], proc);
+	
 	pthread_mutex_unlock(&queue_lock);	
 }
 
