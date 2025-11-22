@@ -160,9 +160,20 @@ int split_vm_area(struct vm_area_struct *vma, addr_t split_addr, struct vm_area_
 /* MEM/PHY protypes */
 int MEMPHY_get_freefp(struct memphy_struct *mp, addr_t *fpn);
 int MEMPHY_put_freefp(struct memphy_struct *mp, addr_t fpn);
+int MEMPHY_get_usedfp(struct memphy_struct *mp, addr_t fpn, struct mm_struct *owner);
+int MEMPHY_put_usedfp(struct memphy_struct *mp, addr_t fpn, struct mm_struct *owner);
+int MEMPHY_remove_usedfp(struct memphy_struct *mp, addr_t fpn);
+int MEMPHY_free_usedfp(struct memphy_struct *mp, addr_t fpn);
 int MEMPHY_read(struct memphy_struct * mp, addr_t addr, BYTE *value);
 int MEMPHY_write(struct memphy_struct * mp, addr_t addr, BYTE data);
 int MEMPHY_dump(struct memphy_struct * mp);
+int MEMPHY_get_frame_count(struct framephy_struct *fp_list);
+int MEMPHY_get_stats(struct memphy_struct *mp, int *free_frames, int *used_frames, int *total_frames);
+int MEMPHY_print_stats(struct memphy_struct *mp, const char *name);
+int MEMPHY_find_frame(struct memphy_struct *mp, addr_t fpn, struct mm_struct **owner);
+int MEMPHY_is_frame_free(struct memphy_struct *mp, addr_t fpn);
+int MEMPHY_validate(struct memphy_struct *mp);
+int MEMPHY_cleanup(struct memphy_struct *mp);
 int init_memphy(struct memphy_struct *mp, addr_t max_size, int randomflg);
 
 /* print list */
