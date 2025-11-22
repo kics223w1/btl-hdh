@@ -13,6 +13,7 @@
 #include "libmem.h"
 #include "queue.h"
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef MM64
 #include "mm64.h"
@@ -27,10 +28,24 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
    int memop = regs->a1;
    BYTE value;
    
-   /* TODO THIS DUMMY CREATE EMPTY PROC TO AVOID COMPILER NOTIFY 
-    *      need to be eliminated
-	*/
+   /* Create a minimal PCB wrapper that points back to the kernel.
+    *
+    * Many MM helpers expect a valid `struct pcb_t *caller` only so they can
+    * reach the kernel-wide MM structures via `caller->krnl`.  The original
+    * code allocated an uninitialised PCB which left `caller->krnl`
+    * containing garbage and caused segmentation faults as soon as any
+    * syscall tried to dereference it.
+    *
+    * For the current single-kernel-MM design it is sufficient to create a
+    * tiny, throw‑away PCB whose only meaningful field is `krnl`.
+    */
    struct pcb_t *caller = malloc(sizeof(struct pcb_t));
+   if (caller == NULL) {
+      return -1;
+   }
+   memset(caller, 0, sizeof(struct pcb_t));
+   caller->krnl = krnl;
+   caller->pid  = pid;
 
    /*
     * @bksysnet: Please note in the dual spacing design
@@ -69,6 +84,9 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
             break;
    }
    
+   /* Caller wrapper is no longer needed */
+   free(caller);
+
    return 0;
 }
 

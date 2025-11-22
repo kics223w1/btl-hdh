@@ -98,6 +98,13 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t *allo
   int old_sbrk;
   inc_sz = inc_sz + 1;
 
+  /* cur_vma should never be NULL here, but be defensive */
+  if (cur_vma == NULL)
+  {
+    pthread_mutex_unlock(&mmvm_lock);
+    return -1;
+  }
+
   old_sbrk = cur_vma->sbrk;
 
   /* TODO INCREASE THE LIMIT
@@ -543,7 +550,23 @@ int find_victim_page(struct mm_struct *mm, addr_t *retpgn)
  */
 int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_struct *newrg)
 {
-  struct vm_area_struct *cur_vma = get_vma_by_num(caller->krnl->mm, vmaid);
+  /* Defensive checks to avoid crashes if MM is not properly initialised */
+  if (caller == NULL || caller->krnl == NULL || caller->krnl->mm == NULL)
+  {
+    printf("get_free_vmrg_area: invalid MM (caller=%p krnl=%p mm=%p)\n",
+           (void *)caller,
+           caller ? (void *)caller->krnl : NULL,
+           (caller && caller->krnl) ? (void *)caller->krnl->mm : NULL);
+    return -1;
+  }
+
+  struct mm_struct *mm = caller->krnl->mm;
+  struct vm_area_struct *cur_vma = get_vma_by_num(mm, vmaid);
+  if (cur_vma == NULL)
+  {
+    printf("get_free_vmrg_area: cur_vma NULL for vmaid=%d\n", vmaid);
+    return -1;
+  }
 
   struct vm_rg_struct *rgit = cur_vma->vm_freerg_list;
 

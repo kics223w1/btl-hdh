@@ -123,8 +123,15 @@ static void * ld_routine(void * args) {
 			next_slot(timer_id);
 		}
 #ifdef MM_PAGING
-		krnl->mm = malloc(sizeof(struct mm_struct));
-		init_mm(krnl->mm, proc);
+		/* Initialize a fresh mm_struct before publishing it via krnl->mm
+		 * to avoid other threads seeing a half‑initialised structure. */
+		struct mm_struct *new_mm = malloc(sizeof(struct mm_struct));
+		if (new_mm == NULL) {
+			fprintf(stderr, "Failed to allocate mm_struct\n");
+			exit(1);
+		}
+		init_mm(new_mm, proc);
+		krnl->mm = new_mm;
 		krnl->mram = mram;
 		krnl->mswp = mswp;
 		krnl->active_mswp = active_mswp;
@@ -203,6 +210,7 @@ int main(int argc, char * argv[]) {
 		printf("Usage: os [path to configure file]\n");
 		return 1;
 	}
+
 	char path[100];
 	path[0] = '\0';
 	strcat(path, "input/");

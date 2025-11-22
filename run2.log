@@ -1,0 +1,51 @@
+Time slot   0
+ld_routine
+Time slot   1
+	Loaded a process at input/proc/p0s, PID: 1 PRIO: 130
+Time slot   2
+	CPU 3: Dispatched process  1
+PID 1: PC=0 opcode=0
+	Loaded a process at input/proc/s3, PID: 2 PRIO: 39
+PID 1: PC=1 opcode=1
+__sys_memmap: pid=1 memop=2 a2=0 a3=512
+Time slot   3
+print_pgtbl:
+ PGN[0]: FPN[0]
+ PGN[1]: FPN[1]
+	CPU 2: Dispatched process  2
+PID 2: PC=0 opcode=0
+Time slot   4
+	CPU 3: Put process  1 to run queue
+	CPU 3: Dispatched process  1
+	Loaded a process at input/proc/m1s, PID: 3 PRIO: 15
+PID 1: PC=2 opcode=1
+__sys_memmap: pid=1 memop=2 a2=0 a3=512
+print_pgtbl:
+ PGN[0]: FPN[2]
+ PGN[1]: FPN[3]
+PID 2: PC=1 opcode=0
+Time slot   5
+	CPU 1: Dispatched process  3
+PID 3: PC=0 opcode=1
+	CPU 2: Put process  2 to run queue
+	CPU 2: Dispatched process  2
+PID 2: PC=2 opcode=0
+__sys_memmap: pid=3 memop=2 a2=0 a3=512
+print_pgtbl:
+ PGN[0]: FPN[2]
+ PGN[1]: FPN[3]
+ PGN[2]: FPN[4]
+ PGN[3]: FPN[5]
+PID 1: PC=3 opcode=2
+libfree:205
+print_pgtbl:
+ PGN[0]: FPN[2]
+ PGN[1]: FPN[3]
+ PGN[2]: FPN[4]
+ PGN[3]: FPN[5]
+Time slot   6
+PID 2: PC=3 opcode=0
+PID 3: PC=1 opcode=1
+	Loaded a process at input/proc/s2, PID: 4 PRIO: 120
+	CPU 3: Put process  1 to run queue
+	CPU 3: Dispatched process  4
