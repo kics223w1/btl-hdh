@@ -4,8 +4,18 @@
 #include "bitops.h"
 
 /* CPU Bus definition */
+#ifdef MM64
+#define PAGING_CPU_BUS_WIDTH 64
+#else
 #define PAGING_CPU_BUS_WIDTH 22 /* 22bit bus - MAX SPACE 4MB */
+#endif
+
+#ifdef MM64
+#define PAGING_PAGESZ  4096      /* 4KB or 12-bits PAGE NUMBER */
+#else
 #define PAGING_PAGESZ  256      /* 256B or 8-bits PAGE NUMBER */
+#endif
+
 #define PAGING_MEMRAMSZ BIT(21)
 #define PAGING_PAGE_ALIGNSZ(sz) (DIV_ROUND_UP(sz,PAGING_PAGESZ)*PAGING_PAGESZ)
 
@@ -57,7 +67,11 @@
 
 /* PAGE Num */
 #define PAGING_ADDR_PGN_LOBIT NBITS(PAGING_PAGESZ)
+#ifdef MM64
+#define PAGING_ADDR_PGN_HIBIT 63
+#else
 #define PAGING_ADDR_PGN_HIBIT (PAGING_CPU_BUS_WIDTH - 1)
+#endif
 
 /* Frame PHY Num */
 #define PAGING_ADDR_FPN_LOBIT NBITS(PAGING_PAGESZ)

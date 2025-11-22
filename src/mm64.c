@@ -303,10 +303,62 @@ uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
  **/
 int pte_set_entry(struct pcb_t *caller, addr_t pgn, uint32_t pte_val)
 {
-	struct krnl_t *krnl = caller->krnl;
-	krnl->mm->pgd[pgn]=pte_val;
-	
-	return 0;
+  struct krnl_t *krnl = caller->krnl;
+  
+  addr_t pgd_idx=0;
+  addr_t p4d_idx=0;
+  addr_t pud_idx=0;
+  addr_t pmd_idx=0;
+  addr_t pt_idx=0;
+
+  /* Get page directory indices */
+  get_pd_from_pagenum(pgn, &pgd_idx, &p4d_idx, &pud_idx, &pmd_idx, &pt_idx);
+
+  if (krnl->mm->pgd == NULL)
+    return -1;
+
+  /* Access or allocate P4D */
+  uint64_t **p4d_table = (uint64_t **)&krnl->mm->pgd[pgd_idx];
+  if (*p4d_table == NULL)
+  {
+    *p4d_table = malloc(sizeof(uint64_t) * 512);
+    if (*p4d_table == NULL) return -1;
+    for (int i = 0; i < 512; i++) (*p4d_table)[i] = 0;
+  }
+
+  /* Access or allocate PUD */
+  uint64_t **pud_table = (uint64_t **)&(*p4d_table)[p4d_idx];
+  if (*pud_table == NULL)
+  {
+    *pud_table = malloc(sizeof(uint64_t) * 512);
+    if (*pud_table == NULL) return -1;
+    for (int i = 0; i < 512; i++) (*pud_table)[i] = 0;
+  }
+
+  /* Access or allocate PMD */
+  uint64_t **pmd_table = (uint64_t **)&(*pud_table)[pud_idx];
+  if (*pmd_table == NULL)
+  {
+    *pmd_table = malloc(sizeof(uint64_t) * 512);
+    if (*pmd_table == NULL) return -1;
+    for (int i = 0; i < 512; i++) (*pmd_table)[i] = 0;
+  }
+
+  /* Access or allocate PT */
+  uint64_t **pt_table = (uint64_t **)&(*pmd_table)[pmd_idx];
+  if (*pt_table == NULL)
+  {
+    *pt_table = malloc(sizeof(uint64_t) * 512);
+    if (*pt_table == NULL) return -1;
+    for (int i = 0; i < 512; i++) (*pt_table)[i] = 0;
+  }
+
+  /* Set the PTE value */
+  /* Note: pte_val is uint32_t but entries are uint64_t. We cast to set it. */
+  // printf("pte_set_entry: pgn=%d, pte_val=%08x\n", pgn, pte_val);
+  (*pt_table)[pt_idx] = (uint64_t)pte_val;
+
+  return 0;
 }
 
 

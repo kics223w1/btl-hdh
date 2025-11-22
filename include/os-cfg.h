@@ -183,8 +183,8 @@
 //#define MMDBG 1
 #define IODUMP 1
 #define PAGETBL_DUMP 1
-#define MM64 1
-//#undef MM64
+//#define MM64 1
+#undef MM64
 */
 
 /*

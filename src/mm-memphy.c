@@ -71,7 +71,11 @@ int MEMPHY_read(struct memphy_struct *mp, addr_t addr, BYTE *value)
       return -1;
 
    if (mp->rdmflg)
+   {
+      if (addr >= mp->maxsz)
+         return -1; /* Out of bounds */
       *value = mp->storage[addr];
+   }
    else /* Sequential access device */
       return MEMPHY_seq_read(mp, addr, value);
 
@@ -111,7 +115,11 @@ int MEMPHY_write(struct memphy_struct *mp, addr_t addr, BYTE data)
       return -1;
 
    if (mp->rdmflg)
+   {
+      if (addr >= mp->maxsz)
+         return -1; /* Out of bounds */
       mp->storage[addr] = data;
+   }
    else /* Sequential access device */
       return MEMPHY_seq_write(mp, addr, data);
 
