@@ -1,4 +1,4 @@
-#ifdef CONFIG64
+#if defined(CONFIG64) || defined(MM64)
 #define BITS_PER_LONG 64
 #else
 #define BITS_PER_LONG 32
@@ -7,7 +7,12 @@
 #define BITS_PER_BYTE           8
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
+#if defined(CONFIG64) || defined(MM64)
+#define BIT(nr)                 (1ULL << (nr))
+#else
 #define BIT(nr)                 (1U << (nr))
+#endif
+
 #define BIT_ULL(nr)             (1ULL << (nr))
 #define BIT_MASK(nr)            (1UL << ((nr) % BITS_PER_LONG))
 #define BIT_WORD(nr)            ((nr) / BITS_PER_LONG)
@@ -16,16 +21,18 @@
 
 #define BITS_TO_LONGS(nr)       DIV_ROUND_UP(nr, BITS_PER_BYTE * sizeof(long))
 
-#define BIT_ULL_MASK(nr)        (1ULL << ((nr) % BITS_PER_LONG_LONG))
-#define BIT_ULL_WORD(nr)        ((nr) / BITS_PER_LONG_LONG)
-
 /*
  * Create a contiguous bitmask starting at bit position @l and ending at
  * position @h. For example
  * GENMASK_ULL(39, 21) gives us the 64bit vector 0x000000ffffe00000.
  */
+#if defined(CONFIG64) || defined(MM64)
+#define GENMASK(h, l) \
+	(((~0ULL) << (l)) & (~0ULL >> (BITS_PER_LONG  - (h) - 1)))
+#else
 #define GENMASK(h, l) \
 	(((~0U) << (l)) & (~0U >> (BITS_PER_LONG  - (h) - 1)))
+#endif
 
 #define NBITS2(n) ((n&2)?1:0)
 #define NBITS4(n) ((n&(0xC))?(2+NBITS2(n>>2)):(NBITS2(n)))

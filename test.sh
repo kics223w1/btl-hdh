@@ -36,7 +36,14 @@ TEST_FILES=(
     "os_1_singleCPU_mlq_paging"
     "os_syscall"
     "os_syscall_list"
+    "os_1_mlq_paging_small_1K"
+    "os_1_mlq_paging_small_4K"
+    "os_sc"
 )
+
+# Note:
+# - os_1_singleCPU_mlq: Skipped (Legacy format, missing memory config line)
+# - sched_*: Skipped (For 'sched' target, not 'os' target)
 
 # Choose a timeout command if available (Linux: timeout, macOS/Homebrew: gtimeout)
 TIMEOUT_CMD=""
