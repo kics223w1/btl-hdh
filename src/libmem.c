@@ -185,6 +185,7 @@ int liballoc(struct pcb_t *proc, addr_t size, uint32_t reg_index)
   {
     return -1;
   }
+  flockfile(stdout);
   printf("liballoc:178\n");
 #ifdef IODUMP
   /* TODO dump IO content (if needed) */
@@ -192,6 +193,7 @@ int liballoc(struct pcb_t *proc, addr_t size, uint32_t reg_index)
   print_pgtbl(proc, 0, -1); // print max TBL
 #endif
 #endif
+  funlockfile(stdout);
 
   /* By default using vmaid = 0 */
   return val;
@@ -210,6 +212,7 @@ int libfree(struct pcb_t *proc, uint32_t reg_index)
   {
     return -1;
   }
+  flockfile(stdout);
   printf("libfree:218\n");
 #ifdef IODUMP
   /* TODO dump IO content (if needed) */
@@ -217,6 +220,7 @@ int libfree(struct pcb_t *proc, uint32_t reg_index)
   print_pgtbl(proc, 0, -1); // print max TBL
 #endif
 #endif
+  funlockfile(stdout);
   return 0;//val;
 }
 
@@ -408,7 +412,9 @@ int __read(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE *data)
 
   /* TODO Invalid memory identify */
 
+  pthread_mutex_lock(&mmvm_lock);
   pg_getval(caller->krnl->mm, currg->rg_start + offset, data, caller);
+  pthread_mutex_unlock(&mmvm_lock);
 
   return 0;
 }
@@ -424,6 +430,7 @@ int libread(
   int val = __read(proc, 0, source, offset, &data);
 
   *destination = data;
+  flockfile(stdout);
   printf("libread:426\n");
 #ifdef IODUMP
   /* TODO dump IO content (if needed) */
@@ -431,6 +438,7 @@ int libread(
   print_pgtbl(proc, 0, -1); // print max TBL
 #endif
 #endif
+  funlockfile(stdout);
 
   return val;
 }
@@ -474,6 +482,7 @@ int libwrite(
   {
     return -1;
   }
+  flockfile(stdout);
   printf("libwrite:502\n");
 #ifdef IODUMP
 #ifdef PAGETBL_DUMP
@@ -481,6 +490,7 @@ int libwrite(
 #endif
   // MEMPHY_dump(proc->krnl->mram);  // Commented out to match expected output
 #endif
+  funlockfile(stdout);
 
   return val;
 }

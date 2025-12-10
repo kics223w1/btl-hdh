@@ -17,6 +17,19 @@ static uint64_t _time;
 static int timer_started = 0;
 static int timer_stop = 0;
 
+/* CPU ordering synchronization variables */
+static int _num_cpus = 0;
+static int _current_cpu_turn = -1;  /* -1 means loader's turn, then highest CPU first */
+static int _cpu_active[64];  /* Track which CPUs are still active */
+static pthread_mutex_t _cpu_order_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t _cpu_order_cond = PTHREAD_COND_INITIALIZER;
+
+/* Barrier for scheduling/execution synchronization */
+static int _scheduling_done_count = 0;
+static int _scheduling_barrier_released = 0;
+static pthread_mutex_t _barrier_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t _barrier_cond = PTHREAD_COND_INITIALIZER;
+
 
 static void * timer_routine(void * args) {
 	while (!timer_stop) {
@@ -43,6 +56,9 @@ static void * timer_routine(void * args) {
 
 		/* Increase the time slot */
 		_time++;
+		
+		/* Reset CPU order for the new time slot */
+		reset_cpu_order();
 		
 		/* Let devices continue their job */
 		for (temp = dev_list; temp != NULL; temp = temp->next) {
@@ -129,6 +145,126 @@ void stop_timer() {
 		pthread_mutex_destroy(&temp->id.timer_lock);
 		free(temp);
 	}
+}
+
+/* Initialize CPU ordering with the number of CPUs */
+void init_cpu_order(int num_cpus) {
+	_num_cpus = num_cpus;
+	_current_cpu_turn = num_cpus - 1;  /* Start with highest CPU ID */
+	for (int i = 0; i < num_cpus && i < 64; i++) {
+		_cpu_active[i] = 1;  /* All CPUs start as active */
+	}
+}
+
+/* Find the next active CPU (going from current down to 0) */
+static int find_next_active_cpu(int from) {
+	for (int i = from; i >= 0; i--) {
+		if (_cpu_active[i]) {
+			return i;
+		}
+	}
+	return -1;  /* No active CPU found, signal end of cycle */
+}
+
+/* Find the highest active CPU */
+static int find_highest_active_cpu(void) {
+	for (int i = _num_cpus - 1; i >= 0; i--) {
+		if (_cpu_active[i]) {
+			return i;
+		}
+	}
+	return -1;  /* No active CPUs */
+}
+
+/* Wait for this CPU's turn to process 
+ * cpu_id: 0 to num_cpus-1 for CPUs, -1 for loader
+ * Order: highest CPU first (num_cpus-1), then decreasing to 0
+ */
+void wait_cpu_turn(int cpu_id) {
+	pthread_mutex_lock(&_cpu_order_lock);
+	while (_current_cpu_turn != cpu_id) {
+		pthread_cond_wait(&_cpu_order_cond, &_cpu_order_lock);
+	}
+	pthread_mutex_unlock(&_cpu_order_lock);
+}
+
+/* Mark a CPU as inactive (when it exits) */
+void mark_cpu_inactive(int cpu_id) {
+	pthread_mutex_lock(&_cpu_order_lock);
+	if (cpu_id >= 0 && cpu_id < 64) {
+		_cpu_active[cpu_id] = 0;
+	}
+	pthread_mutex_unlock(&_cpu_order_lock);
+}
+
+/* Signal that this CPU/loader is done, let next one proceed */
+void signal_next_cpu(int cpu_id) {
+	pthread_mutex_lock(&_cpu_order_lock);
+	if (cpu_id == -1) {
+		/* Loader is done, reset for next time slot */
+		int highest = find_highest_active_cpu();
+		_current_cpu_turn = (highest >= 0) ? highest : -1;
+	} else if (cpu_id == 0) {
+		/* CPU 0 is done, loader's turn */
+		_current_cpu_turn = -1;
+	} else {
+		/* Find next active CPU (lower ID) */
+		int next = find_next_active_cpu(cpu_id - 1);
+		if (next >= 0) {
+			_current_cpu_turn = next;
+		} else {
+			/* No more active CPUs, loader's turn */
+			_current_cpu_turn = -1;
+		}
+	}
+	pthread_cond_broadcast(&_cpu_order_cond);
+	pthread_mutex_unlock(&_cpu_order_lock);
+}
+
+/* Reset CPU order for next time slot */
+void reset_cpu_order(void) {
+	pthread_mutex_lock(&_cpu_order_lock);
+	int highest = find_highest_active_cpu();
+	_current_cpu_turn = (highest >= 0) ? highest : -1;
+	pthread_cond_broadcast(&_cpu_order_cond);
+	pthread_mutex_unlock(&_cpu_order_lock);
+	
+	/* Reset barrier for new time slot */
+	pthread_mutex_lock(&_barrier_lock);
+	_scheduling_done_count = 0;
+	_scheduling_barrier_released = 0;
+	pthread_mutex_unlock(&_barrier_lock);
+}
+
+/* Count active participants (CPUs + loader) */
+static int count_active_participants(void) {
+	int count = 1; /* loader */
+	for (int i = 0; i < _num_cpus && i < 64; i++) {
+		if (_cpu_active[i]) count++;
+	}
+	return count;
+}
+
+/* Signal that this participant has finished scheduling */
+void signal_scheduling_done(void) {
+	pthread_mutex_lock(&_barrier_lock);
+	_scheduling_done_count++;
+	int total = count_active_participants();
+	if (_scheduling_done_count >= total) {
+		/* All participants done, release barrier */
+		_scheduling_barrier_released = 1;
+		pthread_cond_broadcast(&_barrier_cond);
+	}
+	pthread_mutex_unlock(&_barrier_lock);
+}
+
+/* Wait for all participants to finish scheduling */
+void wait_scheduling_barrier(void) {
+	pthread_mutex_lock(&_barrier_lock);
+	while (!_scheduling_barrier_released) {
+		pthread_cond_wait(&_barrier_cond, &_barrier_lock);
+	}
+	pthread_mutex_unlock(&_barrier_lock);
 }
 
 

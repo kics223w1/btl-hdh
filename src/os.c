@@ -66,15 +66,21 @@ static void * cpu_routine(void * args) {
 	int time_left = 0;
 	struct pcb_t * proc = NULL;
 	while (1) {
+		/* Wait for this CPU's turn - ensures deterministic ordering */
+		/* CPUs process from highest ID to lowest within each time slot */
+		wait_cpu_turn(id);
+		
 		/* Check the status of current process */
 		if (proc == NULL) {
 			/* No process is running, the we load new process from
 		 	* ready queue */
 			proc = get_proc();
 			if (proc == NULL) {
-                           next_slot(timer_id);
-                           continue; /* First load failed. skip dummy load */
-                        }
+				/* Signal next CPU before waiting for next slot */
+				signal_next_cpu(id);
+				next_slot(timer_id);
+				continue; /* First load failed. skip dummy load */
+			}
 		}else if (proc->pc == proc->code->size) {
 			/* The porcess has finish it job */
 			printf("\tCPU %d: Processed %2d has finished\n",
@@ -94,10 +100,13 @@ static void * cpu_routine(void * args) {
 		if (proc == NULL && done) {
 			/* No process to run, exit */
 			printf("\tCPU %d stopped\n", id);
+			mark_cpu_inactive(id);
+			signal_next_cpu(id);
 			break;
 		}else if (proc == NULL) {
 			/* There may be new processes to run in
 			 * next time slots, just skip current slot */
+			signal_next_cpu(id);
 			next_slot(timer_id);
 			continue;
 		}else if (time_left == 0) {
@@ -105,6 +114,9 @@ static void * cpu_routine(void * args) {
 				id, proc->pid);
 			time_left = time_slot;
 		}
+		
+		/* Signal next CPU after completing scheduling work */
+		signal_next_cpu(id);
 		
 		/* Run current process */
 		run(proc);
@@ -125,7 +137,12 @@ static void * ld_routine(void * args) {
 	struct timer_id_t * timer_id = (struct timer_id_t*)args;
 #endif
 	int i = 0;
+	
+	/* Loader runs after all CPUs (turn = -1) */
+	wait_cpu_turn(-1);
 	printf("ld_routine\n");
+	signal_next_cpu(-1);
+	
 	while (i < num_processes) {
 		struct pcb_t * proc = load(ld_processes.path[i]);
 		struct krnl_t * krnl = proc->krnl = &os;	
@@ -135,6 +152,9 @@ static void * ld_routine(void * args) {
 #endif
 		while (current_time() < ld_processes.start_time[i]) {
 			next_slot(timer_id);
+			/* Wait for loader's turn after all CPUs */
+			wait_cpu_turn(-1);
+			signal_next_cpu(-1);
 		}
 #ifdef MM_PAGING
 		/* Initialize a fresh mm_struct before publishing it via krnl->mm
@@ -155,8 +175,13 @@ static void * ld_routine(void * args) {
 		add_proc(proc);
 		free(ld_processes.path[i]);
 		i++;
+		signal_next_cpu(-1);
 		next_slot(timer_id);
+		/* Wait for next loader turn */
+		wait_cpu_turn(-1);
 	}
+	/* Signal completion before exiting */
+	signal_next_cpu(-1);
 	free(ld_processes.path);
 	free(ld_processes.start_time);
 	done = 1;
@@ -247,6 +272,10 @@ int main(int argc, char * argv[]) {
 		args[i].id = i;
 	}
 	struct timer_id_t * ld_event = attach_event();
+	
+	/* Initialize CPU ordering for deterministic scheduling */
+	init_cpu_order(num_cpus);
+	
 	start_timer();
 
 #ifdef MM_PAGING

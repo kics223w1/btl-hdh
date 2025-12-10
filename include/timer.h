@@ -25,4 +25,15 @@ void next_slot(struct timer_id_t* timer_id);
 
 uint64_t current_time();
 
+/* CPU ordering synchronization - ensures CPUs process in deterministic order */
+void init_cpu_order(int num_cpus);
+void wait_cpu_turn(int cpu_id);
+void signal_next_cpu(int cpu_id);
+void reset_cpu_order(void);
+void mark_cpu_inactive(int cpu_id);
+
+/* Barrier for synchronizing scheduling and execution phases */
+void wait_scheduling_barrier(void);
+void signal_scheduling_done(void);
+
 #endif
