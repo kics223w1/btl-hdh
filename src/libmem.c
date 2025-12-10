@@ -493,17 +493,15 @@ int libwrite(
 int free_pcb_memph(struct pcb_t *caller)
 {
   pthread_mutex_lock(&mmvm_lock);
-  addr_t pagenum;
   addr_t fpn;
-  pte_t pte;
+  uint32_t pte;
+  struct mm_struct *mm = caller->krnl->mm;
+  struct pgn_t *pg = mm->fifo_pgn;
 
-  for (pagenum = 0; pagenum < PAGING_MAX_PGN; pagenum++)
+  while (pg != NULL)
   {
-    /* Use pte_get_entry for mode-independent access */
-    pte = pte_get_entry(caller, pagenum);
-
-    if (pte == 0)
-      continue; /* Skip empty entries */
+    addr_t pgn = pg->pgn;
+    pte = pte_get_entry(caller, pgn);
 
     if (PAGING_PAGE_PRESENT(pte))
     {
@@ -512,9 +510,14 @@ int free_pcb_memph(struct pcb_t *caller)
     }
     else if (pte & PAGING_PTE_SWAPPED_MASK)
     {
-      fpn = PAGING_SWP(pte);
-      MEMPHY_put_freefp(caller->krnl->active_mswp, fpn);
+      if (pte & PAGING_PTE_SWAPPED_MASK)
+      {
+        fpn = PAGING_SWP(pte);
+        MEMPHY_put_freefp(caller->krnl->active_mswp, fpn);
+      }
     }
+    
+    pg = pg->pg_next;
   }
 
   pthread_mutex_unlock(&mmvm_lock);

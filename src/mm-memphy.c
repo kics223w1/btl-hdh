@@ -384,7 +384,8 @@ int init_memphy(struct memphy_struct *mp, addr_t max_size, int randomflg)
    /* Initialize used frame list to NULL */
    mp->used_fp_list = NULL;
 
-   MEMPHY_format(mp, PAGING_PAGESZ);
+   if (MEMPHY_format(mp, PAGING_PAGESZ) < 0)
+     mp->free_fp_list = NULL;
 
    mp->rdmflg = (randomflg != 0) ? 1 : 0;
 
