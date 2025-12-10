@@ -1,9 +1,20 @@
+#ifndef BITOPS_H
+#define BITOPS_H
+
+#include "os-cfg.h"
+
+/* Link CONFIG64 to MM64 flag for consistent bit operations */
+#ifdef MM64
+#define CONFIG64 1
+#endif
+
 #ifdef CONFIG64
 #define BITS_PER_LONG 64
 #else
 #define BITS_PER_LONG 32
 #endif /* CONFIG64 */
 
+#define BITS_PER_LONG_LONG 64
 #define BITS_PER_BYTE           8
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
@@ -16,16 +27,23 @@
 
 #define BITS_TO_LONGS(nr)       DIV_ROUND_UP(nr, BITS_PER_BYTE * sizeof(long))
 
-#define BIT_ULL_MASK(nr)        (1ULL << ((nr) % BITS_PER_LONG_LONG))
-#define BIT_ULL_WORD(nr)        ((nr) / BITS_PER_LONG_LONG)
-
 /*
  * Create a contiguous bitmask starting at bit position @l and ending at
  * position @h. For example
+ * GENMASK(31, 0) gives us 0xFFFFFFFF for 32-bit
  * GENMASK_ULL(39, 21) gives us the 64bit vector 0x000000ffffe00000.
  */
+#ifdef CONFIG64
 #define GENMASK(h, l) \
-	(((~0U) << (l)) & (~0U >> (BITS_PER_LONG  - (h) - 1)))
+	(((~0ULL) << (l)) & (~0ULL >> (64 - (h) - 1)))
+#else
+#define GENMASK(h, l) \
+	(((~0U) << (l)) & (~0U >> (32 - (h) - 1)))
+#endif
+
+/* 64-bit specific mask generation */
+#define GENMASK_ULL(h, l) \
+	(((~0ULL) << (l)) & (~0ULL >> (64 - (h) - 1)))
 
 #define NBITS2(n) ((n&2)?1:0)
 #define NBITS4(n) ((n&(0xC))?(2+NBITS2(n>>2)):(NBITS2(n)))
@@ -35,3 +53,5 @@
 #define NBITS(n) (n==0?0:NBITS32(n))
 
 #define EXTRACT_NBITS(nr, h, l) ((nr&GENMASK(h,l)) >> l)
+
+#endif /* BITOPS_H */

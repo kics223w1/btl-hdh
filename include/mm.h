@@ -1,4 +1,5 @@
 #ifndef MM_H
+#define MM_H
 
 #include "common.h"
 #include "bitops.h"
@@ -21,10 +22,65 @@
 
 #define PAGING_MEMSWPSZ BIT(29)
 #define PAGING_SWPFPN_OFFSET 5  
+
+#ifdef MM64
+/* For 64-bit mode, limit max pages to avoid overflow */
+#define PAGING_MAX_PGN  (DIV_ROUND_UP(BIT_ULL(21),PAGING_PAGESZ))
+#else
 #define PAGING_MAX_PGN  (DIV_ROUND_UP(BIT(PAGING_CPU_BUS_WIDTH),PAGING_PAGESZ))
+#endif
 
 #define PAGING_SBRK_INIT_SZ PAGING_PAGESZ
-/* PTE BIT */
+
+/*
+ * =====================================================================
+ * PTE (Page Table Entry) Bit Definitions
+ * =====================================================================
+ * 32-bit mode: Uses 32-bit PTEs with limited FPN/swap space
+ * 64-bit mode: Uses 64-bit PTEs with larger FPN/swap space
+ * =====================================================================
+ */
+
+#ifdef MM64
+/* 64-bit PTE Layout:
+ * Bits 63:    Present flag
+ * Bits 62:    Swapped flag
+ * Bits 61:    Reserved flag
+ * Bits 60:    Dirty flag
+ * Bits 59-32: User number (28 bits)
+ * Bits 31-0:  FPN (32 bits) or Swap info
+ *   - If not swapped: bits 31-0 = FPN
+ *   - If swapped: bits 4-0 = swap type, bits 31-5 = swap offset
+ */
+#define PAGING_PTE_PRESENT_MASK BIT_ULL(63)
+#define PAGING_PTE_SWAPPED_MASK BIT_ULL(62)
+#define PAGING_PTE_RESERVE_MASK BIT_ULL(61)
+#define PAGING_PTE_DIRTY_MASK BIT_ULL(60)
+#define PAGING_PTE_EMPTY01_MASK BIT_ULL(14)
+#define PAGING_PTE_EMPTY02_MASK BIT_ULL(13)
+
+/* USRNUM - 64-bit mode */
+#define PAGING_PTE_USRNUM_LOBIT 32
+#define PAGING_PTE_USRNUM_HIBIT 59
+/* FPN - 64-bit mode (larger FPN space) */
+#define PAGING_PTE_FPN_LOBIT 0
+#define PAGING_PTE_FPN_HIBIT 31
+/* SWPTYP - same as 32-bit */
+#define PAGING_PTE_SWPTYP_LOBIT 0
+#define PAGING_PTE_SWPTYP_HIBIT 4
+/* SWPOFF - 64-bit mode (larger swap offset) */
+#define PAGING_PTE_SWPOFF_LOBIT 5
+#define PAGING_PTE_SWPOFF_HIBIT 31
+
+#else /* 32-bit mode */
+/* 32-bit PTE Layout:
+ * Bits 31:    Present flag
+ * Bits 30:    Swapped flag
+ * Bits 29:    Reserved flag
+ * Bits 28:    Dirty flag
+ * Bits 27-15: User number (13 bits)
+ * Bits 12-0:  FPN (13 bits) or Swap info
+ */
 #define PAGING_PTE_PRESENT_MASK BIT(31) 
 #define PAGING_PTE_SWAPPED_MASK BIT(30)
 #define PAGING_PTE_RESERVE_MASK BIT(29)
@@ -32,14 +88,10 @@
 #define PAGING_PTE_EMPTY01_MASK BIT(14)
 #define PAGING_PTE_EMPTY02_MASK BIT(13)
 
-/* PTE BIT PRESENT */
-#define PAGING_PTE_SET_PRESENT(pte) (pte=pte|PAGING_PTE_PRESENT_MASK)
-#define PAGING_PAGE_PRESENT(pte) (pte&PAGING_PTE_PRESENT_MASK)
-
-/* USRNUM */
+/* USRNUM - 32-bit mode */
 #define PAGING_PTE_USRNUM_LOBIT 15
 #define PAGING_PTE_USRNUM_HIBIT 27
-/* FPN */
+/* FPN - 32-bit mode */
 #define PAGING_PTE_FPN_LOBIT 0
 #define PAGING_PTE_FPN_HIBIT 12
 /* SWPTYP */
@@ -48,12 +100,24 @@
 /* SWPOFF */
 #define PAGING_PTE_SWPOFF_LOBIT 5
 #define PAGING_PTE_SWPOFF_HIBIT 25
+#endif /* MM64 */
 
-/* PTE */
+/* PTE BIT PRESENT - works for both 32-bit and 64-bit modes */
+#define PAGING_PTE_SET_PRESENT(pte) (pte=pte|PAGING_PTE_PRESENT_MASK)
+#define PAGING_PAGE_PRESENT(pte) (pte&PAGING_PTE_PRESENT_MASK)
+
+/* PTE Masks - use appropriate GENMASK based on mode */
+#ifdef MM64
+#define PAGING_PTE_USRNUM_MASK GENMASK_ULL(PAGING_PTE_USRNUM_HIBIT,PAGING_PTE_USRNUM_LOBIT)
+#define PAGING_PTE_FPN_MASK    GENMASK_ULL(PAGING_PTE_FPN_HIBIT,PAGING_PTE_FPN_LOBIT)
+#define PAGING_PTE_SWPTYP_MASK GENMASK_ULL(PAGING_PTE_SWPTYP_HIBIT,PAGING_PTE_SWPTYP_LOBIT)
+#define PAGING_PTE_SWPOFF_MASK GENMASK_ULL(PAGING_PTE_SWPOFF_HIBIT,PAGING_PTE_SWPOFF_LOBIT)
+#else
 #define PAGING_PTE_USRNUM_MASK GENMASK(PAGING_PTE_USRNUM_HIBIT,PAGING_PTE_USRNUM_LOBIT)
 #define PAGING_PTE_FPN_MASK    GENMASK(PAGING_PTE_FPN_HIBIT,PAGING_PTE_FPN_LOBIT)
 #define PAGING_PTE_SWPTYP_MASK GENMASK(PAGING_PTE_SWPTYP_HIBIT,PAGING_PTE_SWPTYP_LOBIT)
 #define PAGING_PTE_SWPOFF_MASK GENMASK(PAGING_PTE_SWPOFF_HIBIT,PAGING_PTE_SWPOFF_LOBIT)
+#endif
 
 /* Extract PTE */
 #define PAGING_PTE_OFFST(pte) GETVAL(pte,PAGING_OFFST_MASK,PAGING_ADDR_OFFST_LOBIT)
@@ -128,8 +192,10 @@ int get_pd_from_address(addr_t addr, addr_t* pgd, addr_t* p4d, addr_t* pud, addr
 int get_pd_from_pagenum(addr_t pgn, addr_t* pgd, addr_t* p4d, addr_t* pud, addr_t* pmd, addr_t* pt);
 int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn);
 int pte_set_swap(struct pcb_t *caller, addr_t pgn, int swptyp, addr_t swpoff);
-uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn);
-int pte_set_entry(struct pcb_t *caller, addr_t pgn, uint32_t pte_val);
+/* PTE entry access functions - pte_t is defined in os-mm.h */
+pte_t pte_get_entry(struct pcb_t *caller, addr_t pgn);
+int pte_set_entry(struct pcb_t *caller, addr_t pgn, pte_t pte_val);
+
 int init_pte(addr_t *pte,
              int pre,    // present
              addr_t fpn,    // FPN
@@ -142,6 +208,7 @@ int __free(struct pcb_t *caller, int vmaid, int rgid);
 int __read(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE *data);
 int __write(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE value);
 int init_mm(struct mm_struct *mm, struct pcb_t *caller);
+int free_mm(struct mm_struct *mm);
 
 /* VM prototypes */
 int pgalloc(struct pcb_t *proc, uint32_t size, uint32_t reg_index);
@@ -198,4 +265,5 @@ int print_list_vma(struct vm_area_struct *rg);
 
 int print_list_pgn(struct pgn_t *ip);
 int print_pgtbl(struct pcb_t *ip, addr_t start, addr_t end);
-#endif
+
+#endif /* MM_H */

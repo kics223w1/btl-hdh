@@ -13,6 +13,11 @@
 
 #include <stdint.h>
 
+/* Include os-cfg.h first to get MM64 definition */
+#ifndef OSCFG_H
+#include "os-cfg.h"
+#endif
+
 #define MM_PAGING
 #define PAGING_MAX_MMSWP 4 /* max number of supported swapped space */
 #define PAGING_MAX_SYMTBL_SZ 30
@@ -24,14 +29,15 @@
 
 #ifdef MM64
 #define ADDR_TYPE uint64_t
+#define PTE_TYPE uint64_t
 #else
 #define ADDR_TYPE uint32_t
+#define PTE_TYPE uint32_t
 #endif
 
 typedef char BYTE;
 typedef ADDR_TYPE addr_t;
-//typedef unsigned int uint32_t;
-
+typedef PTE_TYPE pte_t;
 
 /* 
  * @bksysnet: the format string need to be redefined
@@ -40,9 +46,11 @@ typedef ADDR_TYPE addr_t;
 #ifdef MM64
 #define FORMAT_ADDR "%lld"
 #define FORMATX_ADDR "%16llx"
+#define FORMAT_PTE "%016llx"
 #else
 #define FORMAT_ADDR "%d"
 #define FORMATX_ADDR "%08x"
+#define FORMAT_PTE "%08x"
 #endif
 
 struct pgn_t{

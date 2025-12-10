@@ -83,9 +83,14 @@
  * 
  * DEFAULT: Disabled (32-bit mode for simplicity)
  * CHANGE TO: Enabled for large memory simulations
+ * 
+ * NOTE: MM64 can be defined via command line (-DMM64=1) for 64-bit builds.
+ *       Only undef if not already defined externally.
  */
+#ifndef MM64
+/* MM64 not defined externally, use default (disabled) */
 //#define MM64 1
-#undef MM64
+#endif
 
 /* ===== DEBUG AND LOGGING CONFIGURATION ===== */
 

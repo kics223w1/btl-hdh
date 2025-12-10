@@ -251,12 +251,12 @@ int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn)
 /* Get PTE page table entry
  * @caller : caller
  * @pgn    : page number
- * @ret    : page table entry
+ * @ret    : page table entry (64-bit in MM64 mode)
  **/
-uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
+pte_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 {
   struct krnl_t *krnl = caller->krnl;
-  uint32_t pte = 0;
+  pte_t pte = 0;
   addr_t pgd_idx=0;
   addr_t p4d_idx=0;
   addr_t pud_idx=0;
@@ -291,7 +291,7 @@ uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
     return 0;
   
   /* Get the actual PTE */
-  pte = (uint32_t)(*pt_table)[pt_idx];
+  pte = (pte_t)(*pt_table)[pt_idx];
 	
   return pte;
 }
@@ -299,9 +299,9 @@ uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 /* Set PTE page table entry
  * @caller : caller
  * @pgn    : page number
- * @ret    : page table entry
+ * @pte_val: page table entry value (64-bit in MM64 mode)
  **/
-int pte_set_entry(struct pcb_t *caller, addr_t pgn, uint32_t pte_val)
+int pte_set_entry(struct pcb_t *caller, addr_t pgn, pte_t pte_val)
 {
   struct krnl_t *krnl = caller->krnl;
   
@@ -354,8 +354,6 @@ int pte_set_entry(struct pcb_t *caller, addr_t pgn, uint32_t pte_val)
   }
 
   /* Set the PTE value */
-  /* Note: pte_val is uint32_t but entries are uint64_t. We cast to set it. */
-  // printf("pte_set_entry: pgn=%d, pte_val=%08x\n", pgn, pte_val);
   (*pt_table)[pt_idx] = (uint64_t)pte_val;
 
   return 0;
@@ -379,7 +377,7 @@ int vmap_pgd_memset(struct pcb_t *caller,           // process call
     pgn = PAGING_PGN(addr + pgit * PAGING_PAGESZ);
     
     /* Initialize PTE with default values (not present, not swapped) */
-    addr_t pte_val = 0;
+    pte_t pte_val = 0;
     if (pte_set_entry(caller, pgn, pte_val) < 0)
     {
       return -1; /* Failed to set PTE */
@@ -716,6 +714,7 @@ int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
   addr_t pgn_start, pgn_end;
   addr_t pgit;
   struct krnl_t *krnl = caller->krnl;
+  (void)krnl; /* Suppress unused variable warning */
 
   addr_t pgd_idx=0;
   addr_t p4d_idx=0;
@@ -727,15 +726,15 @@ int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
   pgn_start = PAGING_PGN(start);
   pgn_end = PAGING_PGN(end);
 
-  printf("Page Table Dump [" FORMAT_ADDR " - " FORMAT_ADDR "]:\n", start, end);
+  printf("Page Table Dump (64-bit mode) [" FORMAT_ADDR " - " FORMAT_ADDR "]:\n", start, end);
   
   /* Traverse the page map and dump the page directory entries */
   for (pgit = pgn_start; pgit <= pgn_end; pgit++)
   {
     get_pd_from_pagenum(pgit, &pgd_idx, &p4d_idx, &pud_idx, &pmd_idx, &pt_idx);
     
-    /* Get PTE value */
-    uint32_t pte = pte_get_entry(caller, pgit);
+    /* Get PTE value - now using pte_t (64-bit) */
+    pte_t pte = pte_get_entry(caller, pgit);
     
     if (pte != 0)
     {
@@ -769,6 +768,95 @@ int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
   
   printf("\n");
 
+  return 0;
+}
+
+/*
+ * free_mm - Free all memory management structures
+ * @mm: memory management struct to free
+ * 
+ * This function recursively frees all 5-level page tables and VMAs
+ */
+int free_mm(struct mm_struct *mm)
+{
+  int i, j, k, l;
+  
+  if (mm == NULL)
+    return -1;
+  
+  /* Free 5-level page tables recursively */
+  if (mm->pgd != NULL)
+  {
+    for (i = 0; i < 512; i++)
+    {
+      uint64_t **p4d_table = (uint64_t **)&mm->pgd[i];
+      if (*p4d_table != NULL)
+      {
+        for (j = 0; j < 512; j++)
+        {
+          uint64_t **pud_table = (uint64_t **)&(*p4d_table)[j];
+          if (*pud_table != NULL)
+          {
+            for (k = 0; k < 512; k++)
+            {
+              uint64_t **pmd_table = (uint64_t **)&(*pud_table)[k];
+              if (*pmd_table != NULL)
+              {
+                for (l = 0; l < 512; l++)
+                {
+                  uint64_t **pt_table = (uint64_t **)&(*pmd_table)[l];
+                  if (*pt_table != NULL)
+                  {
+                    free(*pt_table);
+                    *pt_table = NULL;
+                  }
+                }
+                free(*pmd_table);
+                *pmd_table = NULL;
+              }
+            }
+            free(*pud_table);
+            *pud_table = NULL;
+          }
+        }
+        free(*p4d_table);
+        *p4d_table = NULL;
+      }
+    }
+    free(mm->pgd);
+    mm->pgd = NULL;
+  }
+  
+  /* Free VMAs */
+  struct vm_area_struct *vma = mm->mmap;
+  while (vma != NULL)
+  {
+    struct vm_area_struct *next_vma = vma->vm_next;
+    
+    /* Free free region list */
+    struct vm_rg_struct *rg = vma->vm_freerg_list;
+    while (rg != NULL)
+    {
+      struct vm_rg_struct *next_rg = rg->rg_next;
+      free(rg);
+      rg = next_rg;
+    }
+    
+    free(vma);
+    vma = next_vma;
+  }
+  mm->mmap = NULL;
+  
+  /* Free FIFO page list */
+  struct pgn_t *pgn = mm->fifo_pgn;
+  while (pgn != NULL)
+  {
+    struct pgn_t *next_pgn = pgn->pg_next;
+    free(pgn);
+    pgn = next_pgn;
+  }
+  mm->fifo_pgn = NULL;
+  
   return 0;
 }
 
