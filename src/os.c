@@ -115,11 +115,12 @@ static void * cpu_routine(void * args) {
 			time_left = time_slot;
 		}
 		
-		/* Signal next CPU after completing scheduling work */
-		signal_next_cpu(id);
-		
 		/* Run current process */
 		run(proc);
+		
+		/* Signal next CPU after completing scheduling work and running process */
+		signal_next_cpu(id);
+		
 		time_left--;
 		next_slot(timer_id);
 	}
