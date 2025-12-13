@@ -201,27 +201,33 @@ static void read_config(const char * path) {
 		malloc(sizeof(unsigned long) * num_processes);
 #ifdef MM_PAGING
 	int sit;
-#ifdef MM_FIXED_MEMSZ
-	/* We provide here a back compatible with legacy OS simulatiom config file
-         * In which, it have no addition config line for Mema, keep only one line
-	 * for legacy info 
-         *  [time slice] [N = Number of CPU] [M = Number of Processes to be run]
-         */
-        memramsz    =  0x100000;
-        memswpsz[0] = 0x1000000;
-	for(sit = 1; sit < PAGING_MAX_MMSWP; sit++)
+	/* Init memory sizes with default values (legacy format) */
+	memramsz = 0x100000;
+	memswpsz[0] = 0x1000000;
+	for (sit = 1; sit < PAGING_MAX_MMSWP; sit++)
 		memswpsz[sit] = 0;
-#else
-	/* Read input config of memory size: MEMRAM and upto 4 MEMSWP (mem swap)
-	 * Format: (size=0 result non-used memswap, must have RAM and at least 1 SWAP)
-	 *        MEM_RAM_SZ MEM_SWP0_SZ MEM_SWP1_SZ MEM_SWP2_SZ MEM_SWP3_SZ
-	*/
-	fscanf(file, "%d\n", &memramsz);
-	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
-		fscanf(file, "%d", &(memswpsz[sit])); 
 
-       fscanf(file, "\n"); /* Final character */
-#endif
+	/* Check if the next line contains memory configuration (new format) */
+	long current_pos = ftell(file);
+	char line[256];
+	if (fgets(line, sizeof(line), file) != NULL) {
+		int ram, swp[PAGING_MAX_MMSWP];
+		int count = sscanf(line, "%d %d %d %d %d", &ram, &swp[0], &swp[1], &swp[2], &swp[3]);
+		
+		if (count == 5) {
+			/* Found memory configuration line, update values */
+			memramsz = ram;
+			for (sit = 0; sit < PAGING_MAX_MMSWP; sit++)
+				memswpsz[sit] = swp[sit];
+		} else {
+			/* Not a memory config line (likely process description), rewind */
+			fseek(file, current_pos, SEEK_SET);
+		}
+	} else {
+		/* End of file or error, but we haven't read processes yet? 
+		   Just rewind to be safe, though likely an invalid file if empty here. */
+		fseek(file, current_pos, SEEK_SET);
+	}
 #endif
 
 #ifdef MLQ_SCHED

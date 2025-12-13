@@ -64,6 +64,15 @@ struct pcb_t * get_mlq_proc(void) {
 	static int curr_slot = 0;          /* Remaining slots for current priority */
 	
 	pthread_mutex_lock(&queue_lock);
+
+	/* Check for higher priority processes */
+	for (int i = 0; i < curr_prio; i++) {
+		if (!empty(&mlq_ready_queue[i])) {
+			curr_prio = i;
+			curr_slot = 0;
+			break;
+		}
+	}
 	
 	/* MLQ Policy Implementation:
 	 * - Each priority level i gets slot[i] = MAX_PRIO - i time slots
