@@ -5,11 +5,11 @@ Time slot   1
 	CPU 3: Dispatched process  1
 Time slot   2
 	Loaded a process at input/proc/s3, PID: 2 PRIO: 39
-Time slot   3
-	CPU 2: Dispatched process  2
 liballoc:178
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
+Time slot   3
+	CPU 2: Dispatched process  2
 	CPU 3: Put process  1 to run queue
 	CPU 3: Dispatched process  1
 Time slot   4
@@ -17,32 +17,38 @@ liballoc:178
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
 	Loaded a process at input/proc/m1s, PID: 3 PRIO: 15
-Time slot   5
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
 	CPU 2: Put process  2 to run queue
+Time slot   5
 	CPU 2: Dispatched process  3
-	CPU 1: Dispatched process  2
 liballoc:178
 print_pgtbl:
  PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
+	CPU 1: Dispatched process  2
 	CPU 3: Put process  1 to run queue
 	CPU 3: Dispatched process  1
+Time slot   6
 liballoc:178
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
 liballoc:178
 print_pgtbl:
  PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
-Time slot   6
 	Loaded a process at input/proc/s2, PID: 4 PRIO: 120
-Time slot   7
 	CPU 2: Put process  3 to run queue
 	CPU 2: Dispatched process  3
+Time slot   7
 	CPU 1: Put process  2 to run queue
 	CPU 1: Dispatched process  2
+	CPU 0: Dispatched process  4
 libwrite:502
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
-	CPU 0: Dispatched process  4
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
 	Loaded a process at input/proc/m0s, PID: 5 PRIO: 120
 	CPU 3: Put process  1 to run queue
 	CPU 3: Dispatched process  5
@@ -59,10 +65,10 @@ print_pgtbl:
  PDG=b52fd220b49266f0 P4g=b52fd220b4926700 PUD=b52fd220b4926710 PMD=b52fd220b4926720
 	CPU 2: Put process  3 to run queue
 	CPU 2: Dispatched process  1
-	CPU 1: Put process  2 to run queue
 libread:426
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
+	CPU 1: Put process  2 to run queue
 	CPU 1: Dispatched process  3
 libfree:218
 print_pgtbl:
@@ -76,9 +82,15 @@ Time slot  10
 libwrite:502
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
-Time slot  11
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
 	CPU 2: Put process  1 to run queue
+Time slot  11
 	CPU 2: Dispatched process  5
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b49266f0 P4g=b52fd220b4926700 PUD=b52fd220b4926710 PMD=b52fd220b4926720
 	CPU 1: Processed  3 has finished
 	CPU 1: Dispatched process  1
 libread:426
@@ -96,10 +108,10 @@ print_pgtbl:
 libwrite:502
 print_pgtbl:
  PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
+Time slot  13
 	CPU 2: Put process  5 to run queue
 	CPU 2: Dispatched process  2
 	CPU 1: Put process  1 to run queue
-Time slot  13
 	CPU 1: Dispatched process  4
 	CPU 0: Put process  6 to run queue
 	CPU 0: Dispatched process  5
@@ -127,6 +139,9 @@ Time slot  15
 Time slot  16
 	CPU 0: Processed  2 has finished
 	CPU 0: Dispatched process  1
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b490e6f0 P4g=b52fd220b490e700 PUD=b52fd220b490e710 PMD=b52fd220b490e720
 	Loaded a process at input/proc/s1, PID: 8 PRIO: 0
 Time slot  17
 	CPU 2: Put process  6 to run queue
@@ -150,17 +165,17 @@ Time slot  20
 	CPU 0: Dispatched process  4
 	CPU 2: Put process  8 to run queue
 	CPU 2: Dispatched process  8
-Time slot  21
 	CPU 1: Put process  6 to run queue
 	CPU 1: Dispatched process  6
+Time slot  21
 	CPU 3: Put process  7 to run queue
 	CPU 3: Dispatched process  7
 Time slot  22
 	CPU 0: Processed  4 has finished
 	CPU 0 stopped
+Time slot  23
 	CPU 2: Put process  8 to run queue
 	CPU 2: Dispatched process  8
-Time slot  23
 	CPU 1: Processed  6 has finished
 	CPU 1 stopped
 Time slot  24

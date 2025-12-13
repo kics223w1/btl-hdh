@@ -165,7 +165,7 @@ static void * ld_routine(void * args) {
 			exit(1);
 		}
 		init_mm(new_mm, proc);
-		krnl->mm = new_mm;
+		proc->mm = new_mm;
 		krnl->mram = mram;
 		krnl->mswp = mswp;
 		krnl->active_mswp = active_mswp;

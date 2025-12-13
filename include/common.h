@@ -111,6 +111,7 @@ struct pcb_t
 	uint32_t prio;
 #endif
 	struct krnl_t *krnl;	
+	struct mm_struct *mm;
 	struct page_table_t *page_table; // Page table
 	uint32_t bp;			 // Break pointer
 };

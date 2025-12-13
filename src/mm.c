@@ -99,10 +99,10 @@ int get_pd_from_pagenum(addr_t pgn, addr_t* pgd, addr_t* p4d, addr_t* pud, addr_
 int pte_set_swap(struct pcb_t *caller, addr_t pgn, int swptyp, addr_t swpoff)
 {
   struct krnl_t *krnl = caller->krnl;
-  if (krnl == NULL || krnl->mm == NULL || krnl->mm->pgd == NULL) return -1;
+  if (caller->mm == NULL || caller->mm->pgd == NULL) return -1;
   if (pgn >= PAGING_MAX_PGN) return -1;
 
-  addr_t *pte = &krnl->mm->pgd[pgn];
+  addr_t *pte = &caller->mm->pgd[pgn];
 	
   SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
   SETBIT(*pte, PAGING_PTE_SWAPPED_MASK);
@@ -121,10 +121,10 @@ int pte_set_swap(struct pcb_t *caller, addr_t pgn, int swptyp, addr_t swpoff)
 int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn)
 {
   struct krnl_t *krnl = caller->krnl;
-  if (krnl == NULL || krnl->mm == NULL || krnl->mm->pgd == NULL) return -1;
+  if (caller->mm == NULL || caller->mm->pgd == NULL) return -1;
   if (pgn >= PAGING_MAX_PGN) return -1;
 
-  addr_t *pte = &krnl->mm->pgd[pgn];
+  addr_t *pte = &caller->mm->pgd[pgn];
 
   SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
   CLRBIT(*pte, PAGING_PTE_SWAPPED_MASK);
@@ -143,9 +143,9 @@ int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn)
 pte_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 {
   struct krnl_t *krnl = caller->krnl;
-  if (krnl == NULL || krnl->mm == NULL || krnl->mm->pgd == NULL) return 0;
+  if (caller->mm == NULL || caller->mm->pgd == NULL) return 0;
   if (pgn >= PAGING_MAX_PGN) return 0;
-  return (pte_t)krnl->mm->pgd[pgn];
+  return (pte_t)caller->mm->pgd[pgn];
 }
 
 /* Set PTE page table entry
@@ -156,9 +156,9 @@ pte_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 int pte_set_entry(struct pcb_t *caller, addr_t pgn, pte_t pte_val)
 {
 	struct krnl_t *krnl = caller->krnl;
-	if (krnl == NULL || krnl->mm == NULL || krnl->mm->pgd == NULL) return -1;
+	if (caller->mm == NULL || caller->mm->pgd == NULL) return -1;
 	if (pgn >= PAGING_MAX_PGN) return -1;
-	krnl->mm->pgd[pgn] = pte_val;
+	caller->mm->pgd[pgn] = pte_val;
 	
 	return 0;
 }
@@ -206,7 +206,7 @@ addr_t vmap_page_range(struct pcb_t *caller,           // process call
   {
     pgn = PAGING_PGN(addr + pgit * PAGING_PAGESZ);
     pte_set_fpn(caller, pgn, fpit->fpn);
-    enlist_pgn_node(&caller->krnl->mm->fifo_pgn, pgn);
+    enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
     fpit = fpit->fp_next;
   }
 
@@ -235,7 +235,7 @@ addr_t alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_st
       if (newfp_str == NULL) return -1;
       newfp_str->fpn = fpn;
       newfp_str->fp_next = NULL;
-      newfp_str->owner = caller->krnl->mm;
+      newfp_str->owner = caller->mm;
       
       if (*frm_lst == NULL) {
         *frm_lst = newfp_str;
@@ -426,7 +426,7 @@ int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
   struct krnl_t *krnl = caller->krnl;
 
   printf("print_pgtbl:\n");
-  if (krnl == NULL || krnl->mm == NULL || krnl->mm->pgd == NULL) return -1;
+  if (caller->mm == NULL || caller->mm->pgd == NULL) return -1;
 
   /* Generate pseudo 64-bit addresses for compatibility with expected format */
   /* Use a base that varies slightly with process state to simulate real addresses */

@@ -39,6 +39,9 @@ Time slot  12
 Time slot  13
 	CPU 0: Put process  6 to run queue
 	CPU 0: Dispatched process  3
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
 Time slot  14
 liballoc:178
 print_pgtbl:
@@ -51,7 +54,13 @@ Time slot  16
 Time slot  17
 	CPU 0: Put process  6 to run queue
 	CPU 0: Dispatched process  3
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
 Time slot  18
+libfree:218
+print_pgtbl:
+ PDG=b52fd220b491a6f0 P4g=b52fd220b491a700 PUD=b52fd220b491a710 PMD=b52fd220b491a720
 Time slot  19
 	CPU 0: Processed  3 has finished
 	CPU 0: Dispatched process  6

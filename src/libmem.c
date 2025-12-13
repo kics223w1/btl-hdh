@@ -72,13 +72,13 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t *allo
   /*Allocate at the toproof */
   pthread_mutex_lock(&mmvm_lock);
   struct vm_rg_struct rgnode;
-  struct vm_area_struct *cur_vma = get_vma_by_num(caller->krnl->mm, vmaid);
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   int inc_sz=0;
 
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
   {
-    caller->krnl->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
-    caller->krnl->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
+    caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
+    caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
  
     *alloc_addr = rgnode.rg_start;
 
@@ -121,8 +121,8 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t *allo
   syscall(caller->krnl, caller->pid, 17, &regs); /* SYSCALL 17 sys_memmap */
 
   /*Successful increase limit */
-  caller->krnl->mm->symrgtbl[rgid].rg_start = old_sbrk;
-  caller->krnl->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
+  caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
+  caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
 
   *alloc_addr = old_sbrk;
 
@@ -149,7 +149,7 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   }
 
   /* TODO: Manage the collect freed region to freerg_list */
-  struct vm_rg_struct *rgnode = get_symrg_byid(caller->krnl->mm, rgid);
+  struct vm_rg_struct *rgnode = get_symrg_byid(caller->mm, rgid);
 
   if (rgnode->rg_start == 0 && rgnode->rg_end == 0)
   {
@@ -165,7 +165,7 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   rgnode->rg_next = NULL;
 
   /*enlist the obsoleted memory region */
-  enlist_vm_freerg_list(caller->krnl->mm, freerg_node);
+  enlist_vm_freerg_list(caller->mm, freerg_node);
 
   pthread_mutex_unlock(&mmvm_lock);
   return 0;
@@ -259,7 +259,7 @@ int pg_getpage(struct mm_struct *mm, addr_t pgn, addr_t *fpn, struct pcb_t *call
       /* RAM is full, need to swap out a victim page */
       
       /* Find victim page using FIFO */
-      if (find_victim_page(caller->krnl->mm, &vicpgn) == -1)
+      if (find_victim_page(caller->mm, &vicpgn) == -1)
       {
         return -1; /* No victim page found */
       }
@@ -321,7 +321,7 @@ int pg_getpage(struct mm_struct *mm, addr_t pgn, addr_t *fpn, struct pcb_t *call
     pte_set_fpn(caller, pgn, tgtfpn);
 
     /* Add page to FIFO list for future replacement */
-    enlist_pgn_node(&caller->krnl->mm->fifo_pgn, pgn);
+    enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
   }
 
   /* Get the frame number from updated PTE */
@@ -406,14 +406,14 @@ int pg_setval(struct mm_struct *mm, addr_t addr, BYTE value, struct pcb_t *calle
  */
 int __read(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE *data)
 {
-  struct vm_rg_struct *currg = get_symrg_byid(caller->krnl->mm, rgid);
+  struct vm_rg_struct *currg = get_symrg_byid(caller->mm, rgid);
 
 //  struct vm_area_struct *cur_vma = get_vma_by_num(caller->krnl->mm, vmaid);
 
   /* TODO Invalid memory identify */
 
   pthread_mutex_lock(&mmvm_lock);
-  pg_getval(caller->krnl->mm, currg->rg_start + offset, data, caller);
+  pg_getval(caller->mm, currg->rg_start + offset, data, caller);
   pthread_mutex_unlock(&mmvm_lock);
 
   return 0;
@@ -454,9 +454,9 @@ int libread(
 int __write(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE value)
 {
   pthread_mutex_lock(&mmvm_lock);
-  struct vm_rg_struct *currg = get_symrg_byid(caller->krnl->mm, rgid);
+  struct vm_rg_struct *currg = get_symrg_byid(caller->mm, rgid);
 
-  struct vm_area_struct *cur_vma = get_vma_by_num(caller->krnl->mm, vmaid);
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
 
   if (currg == NULL || cur_vma == NULL) /* Invalid memory identify */
   {
@@ -464,7 +464,7 @@ int __write(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE value
     return -1;
   }
 
-  pg_setval(caller->krnl->mm, currg->rg_start + offset, value, caller);
+  pg_setval(caller->mm, currg->rg_start + offset, value, caller);
 
   pthread_mutex_unlock(&mmvm_lock);
   return 0;
@@ -505,7 +505,7 @@ int free_pcb_memph(struct pcb_t *caller)
   pthread_mutex_lock(&mmvm_lock);
   addr_t fpn;
   uint32_t pte;
-  struct mm_struct *mm = caller->krnl->mm;
+  struct mm_struct *mm = caller->mm;
   struct pgn_t *pg = mm->fifo_pgn;
 
   while (pg != NULL)
@@ -572,16 +572,16 @@ int find_victim_page(struct mm_struct *mm, addr_t *retpgn)
 int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_struct *newrg)
 {
   /* Defensive checks to avoid crashes if MM is not properly initialised */
-  if (caller == NULL || caller->krnl == NULL || caller->krnl->mm == NULL)
+  if (caller == NULL || caller->krnl == NULL || caller->mm == NULL)
   {
     printf("get_free_vmrg_area: invalid MM (caller=%p krnl=%p mm=%p)\n",
            (void *)caller,
            caller ? (void *)caller->krnl : NULL,
-           (caller && caller->krnl) ? (void *)caller->krnl->mm : NULL);
+           (caller) ? (void *)caller->mm : NULL);
     return -1;
   }
 
-  struct mm_struct *mm = caller->krnl->mm;
+  struct mm_struct *mm = caller->mm;
   struct vm_area_struct *cur_vma = get_vma_by_num(mm, vmaid);
   if (cur_vma == NULL)
   {

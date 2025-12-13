@@ -1,356 +1,73 @@
 Time slot   0
 ld_routine
+	Loaded a process at input/proc/p0s, PID: 1 PRIO: 0
 Time slot   1
-	Loaded a process at input/proc/p0s, PID: 1 PRIO: 130
-Time slot   2
-	CPU 2: Dispatched process  1
-	Loaded a process at input/proc/s3, PID: 2 PRIO: 39
-Time slot   3
-	CPU 3: Dispatched process  2
-print_pgtbl:
- PGN[0]: FPN[0]
- PGN[1]: FPN[1]
-Time slot   4
-	CPU 2: Put process  1 to run queue
-	CPU 2: Dispatched process  1
-print_pgtbl:
- PGN[0]: FPN[0]
- PGN[1]: FPN[1]
- PGN[2]: FPN[2]
- PGN[3]: FPN[3]
-	Loaded a process at input/proc/m1s, PID: 3 PRIO: 15
-Time slot   5
-	CPU 3: Put process  2 to run queue
-	CPU 1: Dispatched process  3
-print_pgtbl:
- PGN[0]: FPN[4]
- PGN[1]: FPN[5]
-	CPU 3: Dispatched process  2
-Time slot   6
-	CPU 2: Put process  1 to run queue
-print_pgtbl:
- PGN[0]: FPN[4]
- PGN[1]: FPN[5]
- PGN[2]: FPN[6]
-	CPU 2: Dispatched process  1
-print_pgtbl:
- PGN[0]: FPN[4]
- PGN[1]: FPN[5]
- PGN[2]: FPN[6]
- PGN[3]: FPN[7]
-	Loaded a process at input/proc/s2, PID: 4 PRIO: 120
-	CPU 3: Put process  2 to run queue
-	CPU 3: Dispatched process  2
-Time slot   7
-	CPU 1: Put process  3 to run queue
-	CPU 1: Dispatched process  4
-	CPU 0: Dispatched process  3
-print_pgtbl:
- PGN[0]: FPN[8]
-	Loaded a process at input/proc/m0s, PID: 5 PRIO: 120
-=== MEMPHY DUMP ===
-Max Size: 1048576 bytes
-Access Mode: Random
-
-Storage Content (first 256 bytes):
-0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-
-Free Frame List:
-  FPN: 9,   FPN: 10,   FPN: 11,   FPN: 12,   FPN: 13
-  FPN: 14,   FPN: 15,   FPN: 16,   FPN: 17,   FPN: 18
-  FPN: 19,   FPN: 20,   FPN: 21,   FPN: 22,   FPN: 23
-  FPN: 24,   FPN: 25,   FPN: 26,   FPN: 27,   FPN: 28
-  ... (more frames)
-Total Free Frames Shown: 20
-
-Used Frame List:
-Total Used Frames Shown: 0
-===================
-
-Time slot   8
-	CPU 2: Put process  1 to run queue
-	CPU 2: Dispatched process  5
-print_pgtbl:
- PGN[0]: FPN[9]
-print_pgtbl:
- PGN[0]: FPN[9]
- PGN[1]: FPN[10]
- PGN[2]: FPN[11]
-Time slot   9
-	CPU 3: Put process  2 to run queue
-	CPU 3: Dispatched process  1
-print_pgtbl:
- PGN[0]: FPN[9]
- PGN[1]: 	CPU 0: Put process  3 to run queue
-print_pgtbl:
-FPN[10]
- PGN[2]: FPN[11]	CPU 1: Put process  4 to run queue
-
- PGN[3]: FPN[12]
-	CPU 1: Dispatched process  2
- PGN[0]: FPN[9]
- PGN[1]: FPN[10]
- PGN[2]: FPN[11]
- PGN[3]: FPN[12]
-	CPU 0: Dispatched process  3
-libfree:212
-print_pgtbl:
- PGN[0]: FPN[9]
- PGN[1]: FPN[10]
- PGN[2]: FPN[11]
- PGN[3]: FPN[12]
-	Loaded a process at input/proc/p1s, PID: 6 PRIO: 15
-Time slot  10
-	CPU 2: Put process  5 to run queue
-	CPU 2: Dispatched process  4
-print_pgtbl:
- PGN[0]: FPN[13]
-=== MEMPHY DUMP ===
-Max Size: 1048576 bytes
-Access Mode: Random
-
-Storage Content (first 256 bytes):
-0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-
-Free Frame List:
-  FPN: 14,   FPN: 15,   FPN: 16,   FPN: 17,   FPN: 18
-  FPN: 19,   FPN: 20,   FPN: 21,   FPN: 22,   FPN: 23
-  FPN: 24,   FPN: 25,   FPN: 26,   FPN: 27,   FPN: 28
-  FPN: 29,   FPN: 30,   FPN: 31,   FPN: 32,   FPN: 33
-  ... (more frames)
-Total Free Frames Shown: 20
-
-Used Frame List:
-Total Used Frames Shown: 0
-===================
-
-Time slot  11
-	CPU 3: Put process  1 to run queue
-	CPU 3: Dispatched process  5
-	CPU 1: Put process  2 to run queue
-	CPU 0: Processed  3 has finished
 	CPU 1: Dispatched process  1
-	CPU 0: Dispatched process  6
+Time slot   2
+liballoc:178
 print_pgtbl:
- PGN[0]: FPN[13]
-	Loaded a process at input/proc/s0, PID: 7 PRIO: 38
-Time slot  12
+	Loaded a process at input/proc/p1s, PID: 2 PRIO: 15
+Time slot   3
+liballoc:178
 print_pgtbl:
- PGN[0]: FPN[14]
-	CPU 2: Put process  4 to run queue
-	CPU 2: Dispatched process  7
+	CPU 0: Dispatched process  2
+Time slot   4
+libfree:218
 print_pgtbl:
- PGN[0]: FPN[14]
-=== MEMPHY DUMP ===
-Max Size: 1048576 bytes
-Access Mode: Random
-
-Storage Content (first 256 bytes):
-0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-
-Free Frame List:
-  FPN: 15,   FPN: 16,   FPN: 17,   FPN: 18,   FPN: 19
-  FPN: 20,   FPN: 21,   FPN: 22,   FPN: 23,   FPN: 24
-  FPN: 25,   FPN: 26,   FPN: 27,   FPN: 28,   FPN: 29
-  FPN: 30,   FPN: 31,   FPN: 32,   FPN: 33,   FPN: 34
-  ... (more frames)
-Total Free Frames Shown: 20
-
-Used Frame List:
-Total Used Frames Shown: 0
-===================
-
-Time slot  13
-	CPU 3: Put process  5 to run queue
-	CPU 3: Dispatched process  2
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  4
+	Loaded a process at input/proc/p1s, PID: 3 PRIO: 0
+Time slot   5
+liballoc:178
+print_pgtbl:
+Time slot   6
+libwrite:502
+print_pgtbl:
+	Loaded a process at input/proc/p1s, PID: 4 PRIO: 0
+Time slot   7
 	CPU 1: Put process  1 to run queue
-	CPU 1: Dispatched process  5
+	CPU 1: Dispatched process  3
+Time slot   8
+Time slot   9
+	CPU 0: Put process  2 to run queue
+	CPU 0: Dispatched process  4
+Time slot  10
+Time slot  11
+Time slot  12
+	CPU 1: Put process  3 to run queue
+	CPU 1: Dispatched process  1
+Time slot  13
+libread:426
 print_pgtbl:
- PGN[0]: FPN[14]
-=== MEMPHY DUMP ===
-Max Size: 1048576 bytes
-Access Mode: Random
-
-Storage Content (first 256 bytes):
-0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-
-Free Frame List:
-  FPN: 15,   FPN: 16,   FPN: 17,   FPN: 18,   FPN: 19
-  FPN: 20,   FPN: 21,   FPN: 22,   FPN: 23,   FPN: 24
-  FPN: 25,   FPN: 26,   FPN: 27,   FPN: 28,   FPN: 29
-  FPN: 30,   FPN: 31,   FPN: 32,   FPN: 33,   FPN: 34
-  ... (more frames)
-Total Free Frames Shown: 20
-
-Used Frame List:
-Total Used Frames Shown: 0
-===================
-
 Time slot  14
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  1
+libwrite:502
 print_pgtbl:
- PGN[0]: FPN[14]
-print_pgtbl:
- PGN[0]: FPN[14]
- PGN[3]: FPN[15]
-=== MEMPHY DUMP ===
-Max Size: 1048576 bytes
-Access Mode: Random
-
-Storage Content (first 256 bytes):
-0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-
-Free Frame List:
-  FPN: 16,   FPN: 17,   FPN: 18,   FPN: 19,   FPN: 20
-  FPN: 21,   FPN: 22,   FPN: 23,   FPN: 24,   FPN: 25
-  FPN: 26,   FPN: 27,   FPN: 28,   FPN: 29,   FPN: 30
-  FPN: 31,   FPN: 32,   FPN: 33,   FPN: 34,   FPN: 35
-  ... (more frames)
-Total Free Frames Shown: 20
-
-Used Frame List:
-Total Used Frames Shown: 0
-===================
-
-	CPU 3: Put process  2 to run queue
-	CPU 3: Dispatched process  6
-	CPU 0: Put process  4 to run queue
-	CPU 0: Dispatched process  7
 Time slot  15
-	CPU 1: Processed  5 has finished
-	CPU 1: Dispatched process  2
+	CPU 0: Put process  4 to run queue
+	CPU 0: Dispatched process  3
+libread:426
+print_pgtbl:
 Time slot  16
-	CPU 1: Processed  2 has finished
-	CPU 1: Dispatched process  4
-	CPU 2: Put process  1 to run queue
-	CPU 2: Dispatched process  1
-	Loaded a process at input/proc/s1, PID: 8 PRIO: 0
+libwrite:502
+print_pgtbl:
 Time slot  17
-	CPU 3: Put process  6 to run queue
-	CPU 3: Dispatched process  8
-	CPU 0: Put process  7 to run queue
-	CPU 0: Dispatched process  6
+libread:426
+print_pgtbl:
 Time slot  18
-	CPU 2: Processed  1 has finished
-	CPU 2: Dispatched process  7
-	CPU 1: Put process  4 to run queue
-	CPU 1: Dispatched process  4
 Time slot  19
-	CPU 3: Put process  8 to run queue
-	CPU 3: Dispatched process  8
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  6
-Time slot  20
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-	CPU 1: Put process  4 to run queue
+	CPU 1: Put process  1 to run queue
 	CPU 1: Dispatched process  4
+	CPU 0: Processed  3 has finished
+	CPU 0: Dispatched process  1
+libfree:218
+print_pgtbl:
+Time slot  20
 Time slot  21
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  6
-	CPU 3: Put process  8 to run queue
-	CPU 3: Dispatched process  8
+	CPU 0: Processed  1 has finished
+	CPU 0: Dispatched process  2
 Time slot  22
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
+Time slot  23
 	CPU 1: Processed  4 has finished
 	CPU 1 stopped
-	CPU 3: Put process  8 to run queue
-Time slot  23
-	CPU 3: Dispatched process  8
-	CPU 0: Processed  6 has finished
-	CPU 0 stopped
 Time slot  24
-	CPU 3: Processed  8 has finished
-	CPU 3 stopped
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
 Time slot  25
-Time slot  26
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-Time slot  27
-Time slot  28
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-Time slot  29
-	CPU 2: Processed  7 has finished
-	CPU 2 stopped
+	CPU 0: Processed  2 has finished
+	CPU 0 stopped
