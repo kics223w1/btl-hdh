@@ -218,6 +218,10 @@ static void read_config(const char * path) {
 		if (count == 5) {
 			/* Found memory configuration line, update values */
 			memramsz = ram;
+#ifdef MM64
+			/* Force minimum RAM size to 1 page if configured size is too small */
+			if (memramsz < PAGING_PAGESZ) memramsz = PAGING_PAGESZ;
+#endif
 			for (sit = 0; sit < PAGING_MAX_MMSWP; sit++)
 				memswpsz[sit] = swp[sit];
 		} else {
