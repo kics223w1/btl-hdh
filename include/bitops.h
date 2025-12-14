@@ -36,6 +36,9 @@
 	(((~0U) << (l)) & (~0U >> (BITS_PER_LONG  - (h) - 1)))
 #endif
 
+#define GENMASK_ULL(h, l) \
+	(((~0ULL) << (l)) & (~0ULL >> (BITS_PER_LONG_LONG - (h) - 1)))
+
 #define NBITS2(n) ((n&2)?1:0)
 #define NBITS4(n) ((n&(0xC))?(2+NBITS2(n>>2)):(NBITS2(n)))
 #define NBITS8(n) ((n&0xF0)?(4+NBITS4(n>>4)):(NBITS4(n)))
